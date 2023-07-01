@@ -21,6 +21,11 @@ git commit -m "first commit"
 git branch -M main
 git remote add origin git@github.com:killman2016/gfw_library.git
 git push -u origin main
+
+# update again
+git add .
+git commit -m "new file added"
+git push origin
 ```
 
 ### …or push an existing repository from the command line
