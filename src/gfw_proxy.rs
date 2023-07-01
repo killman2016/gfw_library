@@ -1,3 +1,7 @@
+use std::error::Error;
+
+use tokio::net::{TcpListener, TcpStream};
+
 use futures::future;
 use tokio::io::{self, AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
@@ -5,14 +9,83 @@ use crate::gfw_decrypt::{gfw_block_size, gfw_decrypt_data, gfw_decrypt_header};
 use crate::gfw_encrypt::gfw_encrypt_all;
 use crate::{gfw_get_cipher, gfw_get_key};
 
-pub async fn relay<'a, L, R>(l: &'a mut L, r: &'a mut R) -> io::Result<(u64, u64)>
+// gfw press proxy with encrypt/decrypt ...
+pub async fn gfw_press_proxy(server: &str, forward_server: &str, up_or_down: bool) -> Result<(), Box<dyn Error>> {
+    // proxy server listerning ...
+
+    let listener = TcpListener::bind(server).await.unwrap();
+
+    //dbg!(&listener);
+
+    loop {
+        let (local_stream, _) = match listener.accept().await {
+            Ok(socket_stream) => socket_stream,
+            Err(accept_error) => {
+                println!("accpeting socket failed with error {}", accept_error);
+                continue;
+            }
+        };
+
+        let remote_stream = match TcpStream::connect(forward_server).await {
+            Ok(remote_stream) => remote_stream,
+            Err(connect_error) => {
+                println!(
+                    "connecting to remote socket failed with error {}",
+                    connect_error
+                );
+                continue;
+            }
+        };
+        println!("{}:{}",listener.local_addr().unwrap().ip(),listener.local_addr().unwrap().port());
+
+        tokio::spawn(gfw_relay(local_stream, remote_stream, up_or_down));
+    }
+
+}
+
+// standard proxy server without any encrypt/decrypt ...
+pub async fn gfw_std_proxy(server: &str, forward_server: &str) -> Result<(), Box<dyn Error>> {
+    // proxy server listerning ...
+
+    let listener = TcpListener::bind(server).await.unwrap();
+
+    //dbg!(&listener);
+
+    loop {
+        let (local_stream, _) = match listener.accept().await {
+            Ok(socket_stream) => socket_stream,
+            Err(accept_error) => {
+                println!("accpeting socket failed with error {}", accept_error);
+                continue;
+            }
+        };
+
+        let remote_stream = match TcpStream::connect(forward_server).await {
+            Ok(remote_stream) => remote_stream,
+            Err(connect_error) => {
+                println!(
+                    "connecting to remote socket failed with error {}",
+                    connect_error
+                );
+                continue;
+            }
+        };
+        println!("{}:{}",listener.local_addr().unwrap().ip(),listener.local_addr().unwrap().port());
+
+        tokio::spawn(relay(local_stream, remote_stream));
+    }
+
+}
+
+pub async fn relay<L, R>(l: L, r: R)
+//-> io::Result<(u64, u64)>
 where
-    L: AsyncRead + AsyncWrite + Unpin + ?Sized,
-    R: AsyncRead + AsyncWrite + Unpin + ?Sized,
+    L: AsyncRead + AsyncWrite + Unpin,
+    R: AsyncRead + AsyncWrite + Unpin,
 {
     let (mut lr, mut lw) = tokio::io::split(l);
     let (mut rr, mut rw) = tokio::io::split(r);
-    return relay_split(&mut lr, &mut lw, &mut rr, &mut rw).await;
+    relay_split(&mut lr, &mut lw, &mut rr, &mut rw).await;
 }
 
 pub async fn relay_split<'a, LR, LW, RR, RW>(
@@ -20,7 +93,8 @@ pub async fn relay_split<'a, LR, LW, RR, RW>(
     mut lw: &'a mut LW,
     mut rr: &'a mut RR,
     mut rw: &'a mut RW,
-) -> io::Result<(u64, u64)>
+)
+//-> io::Result<(u64, u64)>
 where
     LR: AsyncRead + Unpin + ?Sized,
     LW: AsyncWrite + Unpin + ?Sized,
@@ -29,7 +103,8 @@ where
 {
     let client_to_server = transfer(&mut lr, &mut rw);
     let server_to_client = transfer(&mut rr, &mut lw);
-    return future::try_join(client_to_server, server_to_client).await;
+    future::try_join(client_to_server, server_to_client).await.unwrap();
+    println!("closing connection");
 }
 
 pub async fn transfer<'a, R, W>(reader: &'a mut R, writer: &'a mut W) -> io::Result<u64>
@@ -42,14 +117,14 @@ where
     Ok(len)
 }
 
-pub async fn gfw_relay<'a, L, R>(l: &'a mut L, r: &'a mut R, up: bool) -> io::Result<(u64, u64)>
+pub async fn gfw_relay<L, R>(l: L, r: R, up: bool) //-> io::Result<(u64, u64)>
 where
-    L: AsyncRead + AsyncWrite + Unpin + ?Sized,
-    R: AsyncRead + AsyncWrite + Unpin + ?Sized,
+    L: AsyncRead + AsyncWrite + Unpin,
+    R: AsyncRead + AsyncWrite + Unpin,
 {
     let (mut lr, mut lw) = tokio::io::split(l);
     let (mut rr, mut rw) = tokio::io::split(r);
-    return gfw_relay_split(&mut lr, &mut lw, &mut rr, &mut rw, up).await;
+    gfw_relay_split(&mut lr, &mut lw, &mut rr, &mut rw, up).await;
 }
 
 pub async fn gfw_relay_split<'a, LR, LW, RR, RW>(
@@ -58,7 +133,7 @@ pub async fn gfw_relay_split<'a, LR, LW, RR, RW>(
     mut rr: &'a mut RR,
     mut rw: &'a mut RW,
     up: bool,
-) -> io::Result<(u64, u64)>
+) //-> io::Result<(u64, u64)>
 where
     LR: AsyncRead + Unpin + ?Sized,
     LW: AsyncWrite + Unpin + ?Sized,
@@ -68,11 +143,11 @@ where
     if up {
         let client_to_server = transfer_encrypt(&mut lr, &mut rw);
         let server_to_client = transfer_decrypt(&mut rr, &mut lw);
-        return future::try_join(client_to_server, server_to_client).await;
+        future::try_join(client_to_server, server_to_client).await.unwrap();
     } else {
         let client_to_server = transfer_decrypt(&mut lr, &mut rw);
         let server_to_client = transfer_encrypt(&mut rr, &mut lw);
-        return future::try_join(client_to_server, server_to_client).await;
+        future::try_join(client_to_server, server_to_client).await.unwrap();
     }
 }
 
