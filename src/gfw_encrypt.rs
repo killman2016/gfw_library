@@ -36,6 +36,8 @@ pub fn gfw_get_noise(size: usize) -> Vec<u8> {
 pub fn gfw_encrypt_all(cipher: Cipher, key: &[u8], data: &[u8]) -> Vec<u8> {
     debug_assert_eq!(key.len(), KEY_SIZE);
 
+    println!("\nencrypt {}: {:?}", &data.len(), &data);
+
     let cipher_data = gfw_encrypt_data(cipher, key, data);
     let noise_data = gfw_get_noise(cipher_data.len());
 
@@ -51,6 +53,8 @@ pub fn gfw_encrypt_all(cipher: Cipher, key: &[u8], data: &[u8]) -> Vec<u8> {
 
     debug_assert_eq!([44], &header[5..6]);
     debug_assert_eq!([44, 44], &header[14..16]);
+
+    println!("encrypt size: {}", cipher_size - IV_SIZE);
 
     [cipher_header, cipher_data, noise_data].concat()
 }

@@ -1,26 +1,34 @@
 use openssl::symm::{decrypt, Cipher};
 
-use crate::{HEADER_SIZE, KEY_SIZE};
+use crate::{HEADER_SIZE, IV_SIZE, KEY_SIZE};
 
 //gfw decrypt data remove addional IV before cipher data
 // data format: [IV] + [cipher data]
 //   [IV] size 16 bytes for aes_256_cfb128
 //   [cipher] is variable
-pub fn gfw_decrypt_data(cipher: Cipher, key: &[u8], data: &[u8]) -> Vec<u8> {
+pub fn gfw_decrypt_data(cipher: Cipher, key: &[u8], data: &[u8]) -> Box<Vec<u8>> {
     debug_assert!(data.len() > 16);
     debug_assert_eq!(key.len(), 32);
 
     let iv = &data[..16];
     let plaintext = decrypt(cipher, key, Some(&iv), &data[16..]).unwrap();
 
-    plaintext
+    println!("\ndecrypt <{}>: {:?}", &plaintext.len(), &&plaintext);
+
+    Box::new(plaintext)
 }
 
 // gfw header format: [xxxxx,xxxxxxxx,,]
 // header size 16 bytes
 pub fn gfw_decrypt_header(cipher: Cipher, key: &[u8], data: &[u8]) -> Vec<u8> {
-    let header_text = gfw_decrypt_data(cipher, key, data);
-    header_text
+    debug_assert!(data.len() > 16);
+    debug_assert_eq!(key.len(), 32);
+    
+    let iv = &data[..16];
+    let plaintext = decrypt(cipher, key, Some(&iv), &data[16..]).unwrap();
+
+    plaintext
+
 }
 
 // gfw block size from header
@@ -43,6 +51,8 @@ pub fn gfw_block_size(header: &[u8]) -> (usize, usize) {
         .parse::<usize>()
         .unwrap_or_default();
 
+    println!("decrypt size :<{}>", cipher_size - IV_SIZE);
+    
     (noise_size, cipher_size)
 }
 
@@ -52,7 +62,7 @@ pub fn gfw_block_size(header: &[u8]) -> (usize, usize) {
 //   [header data] = [IV] + [noise_size,cipher_data_size,,]
 //   [cipher data] = [IV] + [data]
 //   [noise data] = [random bytes]
-pub fn gfw_decrypt_all(cipher: Cipher, key: &[u8], data: &[u8]) -> Vec<u8> {
+pub fn gfw_decrypt_all(cipher: Cipher, key: &[u8], data: &[u8]) -> Box<Vec<u8>> {
     debug_assert!(data.len() > HEADER_SIZE);
     debug_assert_eq!(key.len(), KEY_SIZE);
 

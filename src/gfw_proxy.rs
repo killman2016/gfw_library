@@ -7,10 +7,14 @@ use tokio::io::{self, AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
 use crate::gfw_decrypt::{gfw_block_size, gfw_decrypt_data, gfw_decrypt_header};
 use crate::gfw_encrypt::gfw_encrypt_all;
-use crate::{gfw_get_cipher, gfw_get_key};
+use crate::{gfw_get_cipher, gfw_get_key, HEADER_SIZE, IV_SIZE};
 
 // gfw press proxy with encrypt/decrypt ...
-pub async fn gfw_press_proxy(server: &str, forward_server: &str, up_or_down: bool) -> Result<(), Box<dyn Error>> {
+pub async fn gfw_press_proxy(
+    server: &str,
+    forward_server: &str,
+    up_or_down: bool,
+) -> Result<(), Box<dyn Error>> {
     // proxy server listerning ...
 
     let listener = TcpListener::bind(server).await.unwrap();
@@ -36,11 +40,11 @@ pub async fn gfw_press_proxy(server: &str, forward_server: &str, up_or_down: boo
                 continue;
             }
         };
-        println!("{}:{}",listener.local_addr().unwrap().ip(),listener.local_addr().unwrap().port());
+
+        //println!("{}:{}",listener.local_addr().unwrap().ip(),listener.local_addr().unwrap().port());
 
         tokio::spawn(gfw_relay(local_stream, remote_stream, up_or_down));
     }
-
 }
 
 // standard proxy server without any encrypt/decrypt ...
@@ -49,9 +53,8 @@ pub async fn gfw_std_proxy(server: &str, forward_server: &str) -> Result<(), Box
 
     let listener = TcpListener::bind(server).await.unwrap();
 
-    //dbg!(&listener);
-
     loop {
+
         let (local_stream, _) = match listener.accept().await {
             Ok(socket_stream) => socket_stream,
             Err(accept_error) => {
@@ -70,11 +73,14 @@ pub async fn gfw_std_proxy(server: &str, forward_server: &str) -> Result<(), Box
                 continue;
             }
         };
-        println!("{}:{}",listener.local_addr().unwrap().ip(),listener.local_addr().unwrap().port());
+        // println!(
+        //     "{}:{}",
+        //     listener.local_addr().unwrap().ip(),
+        //     listener.local_addr().unwrap().port()
+        // );
 
         tokio::spawn(relay(local_stream, remote_stream));
     }
-
 }
 
 pub async fn relay<L, R>(l: L, r: R)
@@ -103,7 +109,9 @@ where
 {
     let client_to_server = transfer(&mut lr, &mut rw);
     let server_to_client = transfer(&mut rr, &mut lw);
-    future::try_join(client_to_server, server_to_client).await.unwrap();
+    future::try_join(client_to_server, server_to_client)
+        .await
+        .unwrap();
     println!("closing connection");
 }
 
@@ -117,7 +125,8 @@ where
     Ok(len)
 }
 
-pub async fn gfw_relay<L, R>(l: L, r: R, up: bool) //-> io::Result<(u64, u64)>
+pub async fn gfw_relay<L, R>(l: L, r: R, up: bool)
+//-> io::Result<(u64, u64)>
 where
     L: AsyncRead + AsyncWrite + Unpin,
     R: AsyncRead + AsyncWrite + Unpin,
@@ -133,7 +142,8 @@ pub async fn gfw_relay_split<'a, LR, LW, RR, RW>(
     mut rr: &'a mut RR,
     mut rw: &'a mut RW,
     up: bool,
-) //-> io::Result<(u64, u64)>
+)
+//-> io::Result<(u64, u64)>
 where
     LR: AsyncRead + Unpin + ?Sized,
     LW: AsyncWrite + Unpin + ?Sized,
@@ -141,13 +151,29 @@ where
     RW: AsyncWrite + Unpin + ?Sized,
 {
     if up {
+        // local client
         let client_to_server = transfer_encrypt(&mut lr, &mut rw);
         let server_to_client = transfer_decrypt(&mut rr, &mut lw);
-        future::try_join(client_to_server, server_to_client).await.unwrap();
+        let(x,y) = future::try_join(client_to_server, server_to_client)
+            .await
+            .unwrap();
+        println!("client return value: {x} / {y}");
+        // tokio::select! {
+        //     _ = client_to_server => {println!("close client to vps server.");} ,
+        //     _ = server_to_client => {println!("close vps server to client.");} ,
+        // };
     } else {
+        // vps server
         let client_to_server = transfer_decrypt(&mut lr, &mut rw);
         let server_to_client = transfer_encrypt(&mut rr, &mut lw);
-        future::try_join(client_to_server, server_to_client).await.unwrap();
+        let(x,y) = future::try_join(client_to_server, server_to_client)
+            .await
+            .unwrap();
+        println!("vps return value: {x} / {y}");
+        // tokio::select! {
+        //     _ = client_to_server => { println!("close vps_server to squid_server."); } ,
+        //     _ = server_to_client => { println!("close squid_server to vps server."); } ,
+        // };
     }
 }
 
@@ -160,7 +186,7 @@ where
     let key = gfw_get_key();
 
     // read incoming data from reader
-    let mut buf = vec![];
+    let mut buf = vec![0u8; 1024 * 4];
     loop {
         match reader.read(&mut buf).await {
             // Return value of `Ok(0)` signifies that the remote has
@@ -172,7 +198,7 @@ where
                 if writer.write_all(&cipher_data).await.is_err() {
                     // Unexpected socket error. There isn't much we can
                     // do here so just stop processing.
-                    return Ok(n.try_into().unwrap());
+                    return Ok(cipher_data.len().try_into().unwrap());
                 }
             }
             Err(_) => {
@@ -192,26 +218,28 @@ where
     let cipher = gfw_get_cipher();
     let key = gfw_get_key();
 
-    // get header data from reader
-    let mut header_buffer = vec![0u8; 32];
     loop {
+        // get header data from reader
+        let mut header_buffer = vec![0u8; HEADER_SIZE];
         match reader.read_exact(&mut header_buffer).await {
             // Return value of `Ok(0)` signifies that the remote has
             // closed
             Ok(0) => return Ok(0),
             Ok(n) => {
+                assert_eq!(n, HEADER_SIZE);
                 // decrypt gfw header
                 let header_text = gfw_decrypt_header(cipher, &key, &header_buffer[..n]);
-                // get gfw block size ( noise_sieze, cipher_data_size )
+                // get gfw block size ( noise_size, cipher_data_size )
                 let (noise_size, cipher_size) = gfw_block_size(&header_text[..]);
                 let data_size = noise_size + cipher_size;
-
+                
                 // get cipher data from reader
                 let mut data_buffer = Box::new(vec![0u8; data_size]);
                 loop {
                     match reader.read_exact(&mut data_buffer).await {
                         Ok(0) => return Ok(0),
                         Ok(n) => {
+                            assert_eq!(n, data_size);
                             let data = gfw_decrypt_data(cipher, &key, &data_buffer[..cipher_size]);
                             if writer.write_all(&data).await.is_err() {
                                 // Unexpected socket error. There isn't much we can
