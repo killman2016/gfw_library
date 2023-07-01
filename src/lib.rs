@@ -29,17 +29,22 @@ mod tests {
 
     #[test]
     fn cipher_works() {
-        let text = b"Some Crypto Text Example!";
+        let origin_text = b"Some Crypto Text Example!";
+        
         let cipher = gfw_get_cipher();
         let key = gfw_secrect_key(TESTPASSED);
-        let cipher_text = gfw_encrypt_data(cipher, &key, text);
+        
+        let cipher_text = gfw_encrypt_data(cipher, &key, origin_text);
         let plain_text = gfw_decrypt_data(cipher, &key, &cipher_text);
-        assert_eq!(text, &plain_text[..]);
-        let cipher_data = gfw_encrypt_all(cipher, &key, text);
+        assert_eq!(origin_text, &plain_text[..]);
+
+        let cipher_data = gfw_encrypt_all(cipher, &key, origin_text);
         let plain_data = gfw_decrypt_all(cipher, &key, &cipher_data);
-        println!("text  = {:?}", text);
+        
+        println!("text  = {:?}", origin_text);
         println!("plain = {:?}", plain_data);
-        assert_eq!(text, &plain_data[..]);
+        
+        assert_eq!(origin_text, &plain_data[..]);
     }
 }
 

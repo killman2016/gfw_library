@@ -1,5 +1,1 @@
-This is rust implementation of gfw.press
-
-
-
-
+this is the submodule gfw_library
