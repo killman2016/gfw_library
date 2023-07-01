@@ -18,9 +18,9 @@ pub fn gfw_decrypt_data(cipher: Cipher, key: &[u8], data: &[u8]) -> Vec<u8> {
 
 // gfw header format: [xxxxx,xxxxxxxx,,]
 // header size 16 bytes
-pub fn gfw_get_header(cipher: Cipher, key: &[u8], data: &[u8]) -> Vec<u8> {
-    let header = gfw_decrypt_data(cipher, key, data);
-    header
+pub fn gfw_decrypt_header(cipher: Cipher, key: &[u8], data: &[u8]) -> Vec<u8> {
+    let header_text = gfw_decrypt_data(cipher, key, data);
+    header_text
 }
 
 // gfw block size from header
@@ -30,9 +30,9 @@ pub fn gfw_get_header(cipher: Cipher, key: &[u8], data: &[u8]) -> Vec<u8> {
 pub fn gfw_block_size(header: &[u8]) -> (usize, usize) {
     //println!("header = {:?}", header);
 
-    debug_assert_eq!(header.len(), 16);
-    debug_assert_eq!([44], &header[5..6]);
-    debug_assert_eq!([44, 44], &header[14..16]);
+    assert_eq!(header.len(), 16);
+    assert_eq!([44], &header[5..6]);
+    assert_eq!([44, 44], &header[14..16]);
 
     let noise_size = std::str::from_utf8(&header[0..5])
         .unwrap()
@@ -56,7 +56,7 @@ pub fn gfw_decrypt_all(cipher: Cipher, key: &[u8], data: &[u8]) -> Vec<u8> {
     debug_assert!(data.len() > HEADER_SIZE);
     debug_assert_eq!(key.len(), KEY_SIZE);
 
-    let header_text = gfw_get_header(cipher, key, &data[..HEADER_SIZE]);
+    let header_text = gfw_decrypt_header(cipher, key, &data[..HEADER_SIZE]);
     let (noise_size, cipher_size) = gfw_block_size(&header_text[..]);
 
     debug_assert_eq!(data.len(), HEADER_SIZE + noise_size + cipher_size);

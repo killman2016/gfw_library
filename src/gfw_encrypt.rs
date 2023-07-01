@@ -27,7 +27,7 @@ pub fn gfw_get_noise(size: usize) -> Vec<u8> {
     noise_data
 }
 
-// gfw encrypt data with addition header and noise 
+// gfw encrypt data with addition header and noise
 // gfw cipher data format:
 // [header data][cipher data][noise data]
 //   [header data] = [IV] + [xxxxx,xxxxxxxx,,]
