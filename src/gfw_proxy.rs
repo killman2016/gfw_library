@@ -5,16 +5,6 @@ use crate::gfw_decrypt::{gfw_block_size, gfw_decrypt_data, gfw_decrypt_header};
 use crate::gfw_encrypt::gfw_encrypt_all;
 use crate::{gfw_get_cipher, gfw_get_key};
 
-pub async fn transfer<'a, R, W>(reader: &'a mut R, writer: &'a mut W) -> io::Result<u64>
-where
-    R: AsyncRead + Unpin + ?Sized,
-    W: AsyncWrite + Unpin + ?Sized,
-{
-    let len = tokio::io::copy(reader, writer).await?;
-    writer.shutdown().await?;
-    Ok(len)
-}
-
 pub async fn relay<'a, L, R>(l: &'a mut L, r: &'a mut R) -> io::Result<(u64, u64)>
 where
     L: AsyncRead + AsyncWrite + Unpin + ?Sized,
@@ -40,6 +30,16 @@ where
     let client_to_server = transfer(&mut lr, &mut rw);
     let server_to_client = transfer(&mut rr, &mut lw);
     return future::try_join(client_to_server, server_to_client).await;
+}
+
+pub async fn transfer<'a, R, W>(reader: &'a mut R, writer: &'a mut W) -> io::Result<u64>
+where
+    R: AsyncRead + Unpin + ?Sized,
+    W: AsyncWrite + Unpin + ?Sized,
+{
+    let len = tokio::io::copy(reader, writer).await?;
+    writer.shutdown().await?;
+    Ok(len)
 }
 
 pub async fn gfw_relay<'a, L, R>(l: &'a mut L, r: &'a mut R, up: bool) -> io::Result<(u64, u64)>
