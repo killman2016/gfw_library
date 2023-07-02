@@ -13,7 +13,7 @@ pub fn gfw_decrypt_data(cipher: Cipher, key: &[u8], data: &[u8]) -> Box<Vec<u8>>
     let iv = &data[..16];
     let plaintext = decrypt(cipher, key, Some(&iv), &data[16..]).unwrap();
 
-    println!("\ndecrypt <{}>: {:?}", &plaintext.len(), &&plaintext);
+    println!("\ndecrypt <{}>: {:?}", &plaintext.len(), &plaintext[..]);
 
     Box::new(plaintext)
 }
