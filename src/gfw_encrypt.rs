@@ -12,7 +12,7 @@ use crate::{IV_SIZE, KEY_SIZE, NOISE_MAX};
 pub fn gfw_encrypt_data(cipher: Cipher, key: &[u8], data: &[u8]) -> Vec<u8> {
     debug_assert_eq!(key.len(), KEY_SIZE);
 
-    let mut iv = [0u8; IV_SIZE];
+    let mut iv = vec![0u8; IV_SIZE];
     rand_bytes(&mut iv).unwrap();
 
     let ciphertext = encrypt(cipher, key, Some(&iv), data).unwrap();
@@ -59,7 +59,7 @@ pub fn gfw_encrypt_all(cipher: Cipher, key: &[u8], data: &[u8]) -> Vec<u8> {
     let header_text = format!("{:05},{:08},,", noise_size, cipher_size);
     let header = header_text.as_bytes();
 
-    let mut iv = [0u8; IV_SIZE];
+    let mut iv = vec![0u8; IV_SIZE];
     rand_bytes(&mut iv).unwrap();
 
     let cipher_header = gfw_encrypt_data(cipher, key, &header);

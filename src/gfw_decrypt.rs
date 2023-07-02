@@ -6,7 +6,7 @@ use crate::{HEADER_SIZE, IV_SIZE, KEY_SIZE};
 // data format: [IV] + [cipher data]
 //   [IV] size 16 bytes for aes_256_cfb128
 //   [cipher] is variable
-pub fn gfw_decrypt_data(cipher: Cipher, key: &[u8], data: &[u8]) -> Box<Vec<u8>> {
+pub fn gfw_decrypt_data(cipher: Cipher, key: &[u8], data: &[u8]) -> Vec<u8> {
     debug_assert!(data.len() > 16);
     debug_assert_eq!(key.len(), 32);
 
@@ -24,7 +24,7 @@ pub fn gfw_decrypt_data(cipher: Cipher, key: &[u8], data: &[u8]) -> Box<Vec<u8>>
     } else {
         println!("\nplaintext <{}>: {:?}", &plaintext.len(), &plaintext[..]);
     }
-    Box::new(plaintext)
+    plaintext
 }
 
 // gfw header format: [xxxxx,xxxxxxxx,,]
@@ -70,7 +70,7 @@ pub fn gfw_block_size(header: &[u8]) -> (usize, usize) {
 //   [header data] = [IV] + [noise_size,cipher_data_size,,]
 //   [cipher data] = [IV] + [data]
 //   [noise data] = [random bytes]
-pub fn gfw_decrypt_all(cipher: Cipher, key: &[u8], data: &[u8]) -> Box<Vec<u8>> {
+pub fn gfw_decrypt_all(cipher: Cipher, key: &[u8], data: &[u8]) -> Vec<u8> {
     debug_assert!(data.len() > HEADER_SIZE);
     debug_assert_eq!(key.len(), KEY_SIZE);
 
@@ -80,8 +80,8 @@ pub fn gfw_decrypt_all(cipher: Cipher, key: &[u8], data: &[u8]) -> Box<Vec<u8>> 
 
     debug_assert_eq!(data.len(), HEADER_SIZE + noise_size + cipher_size);
     let cipher_pos = HEADER_SIZE + noise_size;
-    let cipher_text = &data[cipher_pos..];
-    let plain_text = gfw_decrypt_data(cipher, key, cipher_text);
+    ////let cipher_text = &data[cipher_pos..];
+    let plain_text = gfw_decrypt_data(cipher, key, &data[cipher_pos..]);
 
     plain_text
 }

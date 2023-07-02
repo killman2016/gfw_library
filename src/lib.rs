@@ -6,7 +6,7 @@ const NOISE_MAX: usize = 999;
 const IV_SIZE: usize = 16;
 const HEADER_SIZE: usize = 32;
 const KEY_SIZE: usize = 32;
-const BUFFER_MAX: usize = 1024 * 4;
+const BUFFER_MAX: usize = 1024 * 2;
 pub mod gfw_decrypt;
 pub mod gfw_encrypt;
 pub mod gfw_proxy;

@@ -15,7 +15,7 @@ pub async fn gfw_press_proxy(
     forward_server: String,
     up: bool,
     use_tokio: bool,
-) -> Result<(), Box<dyn Error>> {
+) -> io::Result<()> {
     // proxy server listerning ...
 
     let listener = TcpListener::bind(server).await.unwrap();
@@ -23,13 +23,14 @@ pub async fn gfw_press_proxy(
     //dbg!(&listener);
 
     loop {
-        let (local_stream, _) = match listener.accept().await {
-            Ok(socket_stream) => socket_stream,
-            Err(accept_error) => {
-                println!("accpeting socket failed with error {}", accept_error);
-                continue;
-            }
-        };
+        let (local_stream, _) = listener.accept().await.unwrap();
+        //  {
+        //     Ok(socket_stream) => socket_stream,
+        //     Err(accept_error) => {
+        //         println!("accpeting socket failed with error {}", accept_error);
+        //         continue;
+        //     }
+        // };
 
         let proxy_server = forward_server.clone();
 
@@ -113,7 +114,7 @@ where
         let n = reader.read(&mut buf).await.unwrap();
         if n > 0 {
             // encrypt
-            let cipher_data = gfw_encrypt_all(cipher, &key, &buf[..n]).into_boxed_slice();
+            let cipher_data = gfw_encrypt_all(cipher, &key, &buf[..n]);
             // decrypt to get bock size of noise and cipher data size
             let header_text = gfw_decrypt_header(cipher, &key, &cipher_data[..HEADER_SIZE]);
             println!("118 {:?}", &header_text);
@@ -173,8 +174,9 @@ where
                     noise_size, cipher_size, data_size
                 );
 
-                //let cipher_data = vec![0u8];// &data_buffer[noise_size..];
-                let data = gfw_decrypt_data(cipher, &key, &data_buffer[..]).into_boxed_slice();
+                // let cipher_data = vec![0u8];
+                // let x =  &data_buffer[noise_size..];
+                let data = gfw_decrypt_data(cipher, &key, &data_buffer[..]);
                 ////
                 writer.write_all(&data).await.unwrap();
                 ////
