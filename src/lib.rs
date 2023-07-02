@@ -2,10 +2,11 @@ use openssl::sha::sha256;
 use openssl::symm::Cipher;
 
 const TESTPASSED: &str = "e%wQ02#L7srkfg9$";
-const NOISE_MAX: usize = 4096;
+const NOISE_MAX: usize = 999;
 const IV_SIZE: usize = 16;
 const HEADER_SIZE: usize = 32;
 const KEY_SIZE: usize = 32;
+const BUFFER_MAX: usize = 1024 * 4;
 pub mod gfw_decrypt;
 pub mod gfw_encrypt;
 pub mod gfw_proxy;

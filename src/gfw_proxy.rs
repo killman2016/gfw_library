@@ -7,7 +7,7 @@ use tokio::io::{self, AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
 use crate::gfw_decrypt::{gfw_block_size, gfw_decrypt_data, gfw_decrypt_header};
 use crate::gfw_encrypt::gfw_encrypt_all;
-use crate::{gfw_get_cipher, gfw_get_key, HEADER_SIZE};
+use crate::{gfw_get_cipher, gfw_get_key, BUFFER_MAX, HEADER_SIZE, IV_SIZE};
 
 // gfw press proxy with encrypt/decrypt ...
 pub async fn gfw_press_proxy(
@@ -101,20 +101,36 @@ where
     let cipher = gfw_get_cipher();
     let key = gfw_get_key();
 
+    let mut buf = vec![0u8; BUFFER_MAX];
+
     loop {
         // read incoming data from reader
         // not working on this: Box::new(vec![]);
-        let mut buf = Box::new(vec![0u8;4096]);
 
-        match reader.read(&mut buf).await.unwrap() {
+        //let mut buffer: Vec<u8>= vec![];
+        //while let Some(s) = reader.read_buf(buf).next().await {
 
-            0 => continue,
-            n => {
-                let cipher_data = gfw_encrypt_all(cipher, &key, &buf[..n]);
-                println!("write incoming data to forward server ...");
-                writer.write_all(&cipher_data).await.unwrap();
-            },
-            //Err(err) => Err("Unknown Error"),
+        let n = reader.read(&mut buf).await.unwrap();
+        if n > 0 {
+            // encrypt
+            let cipher_data = gfw_encrypt_all(cipher, &key, &buf[..n]).into_boxed_slice();
+            // decrypt to get bock size of noise and cipher data size
+            let header_text = gfw_decrypt_header(cipher, &key, &cipher_data[..HEADER_SIZE]);
+            println!("118 {:?}", &header_text);
+            let (noise_size, cipher_size) = gfw_block_size(&header_text[..]);
+            // send header with noise data together
+            let cipher_pos = HEADER_SIZE + noise_size;
+            // orginal data length equal to cipher data lenght
+            assert_eq!(n, cipher_size - IV_SIZE);
+            // write header + noise data to write
+            println!("write incoming data header to forward server ...");
+            writer.write_all(&cipher_data[..cipher_pos]).await.unwrap();
+            // writer.flush().await.unwrap();
+            // write cipher data to writer
+            // send cipher date
+            println!("write incoming cipher data to forward server ...");
+            writer.write_all(&cipher_data[cipher_pos..]).await.unwrap();
+            //writer.flush().await.unwrap();
         }
     }
 }
@@ -127,40 +143,44 @@ where
     let cipher = gfw_get_cipher();
     let key = gfw_get_key();
 
+    // header buffer size is 32 bytes
+
     loop {
-        // header buffer size is 32 bytes
         let mut header_buffer = vec![0u8; HEADER_SIZE];
         // get header data from reader
-        println!("read cipher header ...");
+        // println!("read cipher header ...");
+        let header_size = reader.read_exact(&mut header_buffer).await.unwrap();
 
-        let header_size = reader
-            .read_exact(&mut header_buffer)
-            .await
-            .unwrap_or_else(|err| {
-                println!("read header error: {}", err);
-                0
-            });
+        if header_size == HEADER_SIZE {
+            //decrypt header and get block size of noise and cipher data
+            let header_text = gfw_decrypt_header(cipher, &key, &header_buffer[..header_size]);
+            println!("155 {:?}", &header_text[..]);
+            let (noise_size, cipher_size) = gfw_block_size(&header_text[..]);
 
-        let header_text = gfw_decrypt_header(cipher, &key, &header_buffer[..header_size]);
-        println!("{:?}", &header_text[..]);
-        let (noise_size, cipher_size) = gfw_block_size(&header_text[..]);
-        let data_size = noise_size + cipher_size;
+            // read noise buffer
+            let mut noise_buffer = vec![0u8; noise_size];
+            let _ = reader.read_exact(&mut noise_buffer).await.unwrap();
 
-        let mut data_buffer = Box::new(vec![0u8; data_size]);
+            // read data buffer
+            let mut data_buffer = vec![0u8; cipher_size];
+            let data_size = reader.read_exact(&mut data_buffer).await.unwrap();
 
-        let size = reader
-            .read_exact(&mut data_buffer)
-            .await
-            .unwrap_or_else(|err| {
-                println!("read data error: {}", err);
-                0
-            });
-        assert_eq!(size, data_size);
-        println!("read size: {},\ndata size :{}, \nnoise len :{}, \ncipher size: {}",size,data_size,noise_size,cipher_size);
-        
-        let data = gfw_decrypt_data(cipher, &key, &data_buffer[..cipher_size]);
-        writer.write_all(&data).await.unwrap();
-    
+            if data_size == cipher_size {
+                assert_eq!(data_size, cipher_size);
+
+                println!(
+                    "\n noise size:{:<8},\ncipher size:{:<8} \nread size: {:<8}",
+                    noise_size, cipher_size, data_size
+                );
+
+                //let cipher_data = vec![0u8];// &data_buffer[noise_size..];
+                let data = gfw_decrypt_data(cipher, &key, &data_buffer[..]).into_boxed_slice();
+                ////
+                writer.write_all(&data).await.unwrap();
+                ////
+                //// writer.flush().await.unwrap();
+            }
+        }
     }
 }
 

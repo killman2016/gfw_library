@@ -20,11 +20,13 @@ pub fn gfw_encrypt_data(cipher: Cipher, key: &[u8], data: &[u8]) -> Vec<u8> {
     [iv.to_vec(), ciphertext].concat()
 }
 
-pub fn gfw_get_noise(size: usize) -> Vec<u8> {
-    let noise_size = NOISE_MAX - (size % NOISE_MAX);
+pub fn gfw_get_noise(cipher_size: usize) -> (Vec<u8>, usize) {
+
+    let noise_size = cipher_size % NOISE_MAX;
+
     let mut noise_data = vec![0u8; noise_size];
     rand_bytes(&mut noise_data).unwrap();
-    noise_data
+    (noise_data, noise_size)
 }
 
 // gfw encrypt data with addition header and noise
@@ -33,16 +35,27 @@ pub fn gfw_get_noise(size: usize) -> Vec<u8> {
 //   [header data] = [IV] + [xxxxx,xxxxxxxx,,]
 //   [cipher data] = [IV] + [data]
 //   [noise data] = [random bytes]
+
 pub fn gfw_encrypt_all(cipher: Cipher, key: &[u8], data: &[u8]) -> Vec<u8> {
     debug_assert_eq!(key.len(), KEY_SIZE);
 
-    println!("\nencrypt {}: {:?}", &data.len(), &data);
+    let data_size = data.len();
+
+    if data_size > 16 {
+        println!(
+            "\nplaintext <{}>: {:?} ... {:?}",
+            data_size,
+            &data[..8],
+            &data[(data_size - 8)..]
+        );
+    } else {
+        println!("\nplaintext <{}>: {:?}", &data.len(), &data[..]);
+    }
 
     let cipher_data = gfw_encrypt_data(cipher, key, data);
-    let noise_data = gfw_get_noise(cipher_data.len());
-
-    let noise_size = noise_data.len();
     let cipher_size = cipher_data.len();
+    let (noise_data, noise_size) = gfw_get_noise(cipher_size);
+
     let header_text = format!("{:05},{:08},,", noise_size, cipher_size);
     let header = header_text.as_bytes();
 
@@ -56,5 +69,6 @@ pub fn gfw_encrypt_all(cipher: Cipher, key: &[u8], data: &[u8]) -> Vec<u8> {
 
     println!("encrypt size: {}", cipher_size - IV_SIZE);
 
-    [cipher_header, cipher_data, noise_data].concat()
+    [cipher_header, noise_data, cipher_data].concat()
+
 }

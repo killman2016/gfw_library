@@ -13,22 +13,30 @@ pub fn gfw_decrypt_data(cipher: Cipher, key: &[u8], data: &[u8]) -> Box<Vec<u8>>
     let iv = &data[..16];
     let plaintext = decrypt(cipher, key, Some(&iv), &data[16..]).unwrap();
 
-    println!("\ndecrypt <{}>: {:?}", &plaintext.len(), &plaintext[..]);
-
+    let data_size = plaintext.len();
+    if data_size > 16 {
+        println!(
+            "\ndecrypt to: <{}>: {:?} ... {:?}",
+            data_size,
+            &plaintext[..8],
+            &plaintext[(data_size - 8)..]
+        );
+    } else {
+        println!("\nplaintext <{}>: {:?}", &plaintext.len(), &plaintext[..]);
+    }
     Box::new(plaintext)
 }
 
 // gfw header format: [xxxxx,xxxxxxxx,,]
 // header size 16 bytes
 pub fn gfw_decrypt_header(cipher: Cipher, key: &[u8], data: &[u8]) -> Vec<u8> {
-    debug_assert!(data.len() > 16);
-    debug_assert_eq!(key.len(), 32);
-    
+    debug_assert_eq!(data.len(), HEADER_SIZE);
+    debug_assert_eq!(key.len(), KEY_SIZE);
+
     let iv = &data[..16];
     let plaintext = decrypt(cipher, key, Some(&iv), &data[16..]).unwrap();
 
     plaintext
-
 }
 
 // gfw block size from header
@@ -51,8 +59,8 @@ pub fn gfw_block_size(header: &[u8]) -> (usize, usize) {
         .parse::<usize>()
         .unwrap_or_default();
 
-    println!("decrypt size :<{}>", cipher_size - IV_SIZE);
-    
+    println!("cipher data size (without IV) :<{}>", cipher_size - IV_SIZE);
+
     (noise_size, cipher_size)
 }
 
@@ -67,11 +75,12 @@ pub fn gfw_decrypt_all(cipher: Cipher, key: &[u8], data: &[u8]) -> Box<Vec<u8>> 
     debug_assert_eq!(key.len(), KEY_SIZE);
 
     let header_text = gfw_decrypt_header(cipher, key, &data[..HEADER_SIZE]);
+    println!("78 {:?}",&header_text);
     let (noise_size, cipher_size) = gfw_block_size(&header_text[..]);
 
     debug_assert_eq!(data.len(), HEADER_SIZE + noise_size + cipher_size);
-
-    let cipher_text = &data[HEADER_SIZE..(HEADER_SIZE + cipher_size)];
+    let cipher_pos = HEADER_SIZE + noise_size;
+    let cipher_text = &data[cipher_pos..];
     let plain_text = gfw_decrypt_data(cipher, key, cipher_text);
 
     plain_text
