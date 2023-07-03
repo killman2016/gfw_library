@@ -1,9 +1,11 @@
+
+
 use openssl::{
     rand::rand_bytes,
     symm::{encrypt, Cipher},
 };
 
-use crate::{IV_SIZE, KEY_SIZE, NOISE_MAX};
+use crate::{IV_SIZE, KEY_SIZE, NOISE_SIZE};
 
 //gfw encrypt data add addional IV before cipher data
 // data format: [IV] + [cipher data]
@@ -17,16 +19,22 @@ pub fn gfw_encrypt_data(cipher: Cipher, key: &[u8], data: &[u8]) -> Vec<u8> {
 
     let ciphertext = encrypt(cipher, key, Some(&iv), data).unwrap();
 
+    // let mut cipher_buffer = BytesMut::with_capacity(IV_SIZE+ciphertext.len());
+    
+    // cipher_buffer.put_slice(&iv);
+    // cipher_buffer.put_slice(&ciphertext);
+    // cipher_buffer
     [iv.to_vec(), ciphertext].concat()
 }
 
 pub fn gfw_get_noise(cipher_size: usize) -> (Vec<u8>, usize) {
 
-    let noise_size = cipher_size % NOISE_MAX;
+    let _noise_size = cipher_size % NOISE_SIZE;
 
-    let mut noise_data = vec![0u8; noise_size];
+    let mut noise_data = vec![0u8; NOISE_SIZE];
     rand_bytes(&mut noise_data).unwrap();
-    (noise_data, noise_size)
+    (noise_data, NOISE_SIZE)
+    
 }
 
 // gfw encrypt data with addition header and noise
@@ -69,6 +77,6 @@ pub fn gfw_encrypt_all(cipher: Cipher, key: &[u8], data: &[u8]) -> Vec<u8> {
 
     println!("encrypt size: {}", cipher_size - IV_SIZE);
 
-    [cipher_header, noise_data, cipher_data].concat()
+    [noise_data, cipher_header, cipher_data].concat()
 
 }

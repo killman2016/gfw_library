@@ -1,3 +1,5 @@
+//use bytes::{Buf, BufMut, BytesMut};
+
 use std::error::Error;
 
 use tokio::net::{TcpListener, TcpStream};
@@ -7,15 +9,10 @@ use tokio::io::{self, AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
 use crate::gfw_decrypt::{gfw_block_size, gfw_decrypt_data, gfw_decrypt_header};
 use crate::gfw_encrypt::gfw_encrypt_all;
-use crate::{gfw_get_cipher, gfw_get_key, BUFFER_MAX, HEADER_SIZE, IV_SIZE};
+use crate::{gfw_get_cipher, gfw_get_key, BUFFER_MAX, HEADER_BUFFER_SIZE, HEADER_SIZE, NOISE_SIZE};
 
 // gfw press proxy with encrypt/decrypt ...
-pub async fn gfw_press_proxy(
-    server: String,
-    forward_server: String,
-    up: bool,
-    use_tokio: bool,
-) -> io::Result<()> {
+pub async fn gfw_press_proxy(server: String, forward_server: String, up: bool) -> io::Result<()> {
     // proxy server listerning ...
 
     let listener = TcpListener::bind(server).await.unwrap();
@@ -35,12 +32,12 @@ pub async fn gfw_press_proxy(
         let proxy_server = forward_server.clone();
 
         tokio::spawn(async move {
-            handle_connection(local_stream, proxy_server.as_str(), up, use_tokio).await;
+            handle_connection(local_stream, proxy_server.as_str(), up).await;
         });
     }
 }
 
-async fn handle_connection(local_stream: TcpStream, proxy_server: &str, up: bool, use_tokio: bool) {
+async fn handle_connection(local_stream: TcpStream, proxy_server: &str, up: bool) {
     println!(
         "listerning ... {}:{}",
         local_stream.local_addr().unwrap().ip(),
@@ -49,46 +46,51 @@ async fn handle_connection(local_stream: TcpStream, proxy_server: &str, up: bool
     println!("connect to proxy server: {}", proxy_server);
 
     let remote_stream = TcpStream::connect(proxy_server).await.unwrap();
-    gfw_relay(local_stream, remote_stream, up, use_tokio).await;
+
+    gfw_relay(local_stream, remote_stream, up).await;
 }
 
-pub async fn gfw_relay<L, R>(l: L, r: R, up: bool, use_tokio: bool)
+pub async fn gfw_relay<L, R>(l: L, r: R, up: bool)
 where
     L: AsyncRead + AsyncWrite + Unpin,
     R: AsyncRead + AsyncWrite + Unpin,
 {
     let (mut lr, mut lw) = tokio::io::split(l);
     let (mut rr, mut rw) = tokio::io::split(r);
-
+    //println!("gfw_realy begin ...1");
     if up {
         // local client
+        //println!("gfw_realy client begin ...");
+
         let client_to_server = transfer_encrypt(&mut lr, &mut rw);
         let server_to_client = transfer_decrypt(&mut rr, &mut lw);
 
-        if use_tokio {
-            tokio::select! {
-                _ = client_to_server => {println!("close client to vps server.");} ,
-                _ = server_to_client => {println!("close vps server to client.");} ,
-            };
-        } else {
-            future::try_join(client_to_server, server_to_client)
-                .await
-                .unwrap();
-        }
+        // if use_tokio {
+        tokio::select! {
+            _ = client_to_server => {println!("close client to vps server.");} ,
+            _ = server_to_client => {println!("close vps server to client.");} ,
+        };
+        // } else {
+        // future::try_join(client_to_server, server_to_client)
+        //     .await
+        //     .unwrap();
+        //}
     } else {
         // vps server
+        //println!("gfw_realy server begin ...");
         let client_to_server = transfer_decrypt(&mut lr, &mut rw);
         let server_to_client = transfer_encrypt(&mut rr, &mut lw);
-        if use_tokio {
-            tokio::select! {
-                _ = client_to_server => { println!("close vps_server to squid_server."); } ,
-                _ = server_to_client => { println!("close squid_server to vps server."); } ,
-            };
-        } else {
-            future::try_join(client_to_server, server_to_client)
-                .await
-                .unwrap();
-        }
+        // future::try_join
+        // if use_tokio {
+        tokio::select! {
+            _ = client_to_server => { println!("close vps_server to squid_server."); } ,
+            _ = server_to_client => { println!("close squid_server to vps server."); } ,
+        };
+        // } else {
+        // future::try_join(client_to_server, server_to_client)
+        //     .await
+        //     .unwrap();
+        // }
     }
 
     println!("closing connection");
@@ -102,88 +104,88 @@ where
     let cipher = gfw_get_cipher();
     let key = gfw_get_key();
 
-    let mut buf = vec![0u8; BUFFER_MAX];
-
     loop {
+        //println!("transfer encrypt ...");
         // read incoming data from reader
         // not working on this: Box::new(vec![]);
 
         //let mut buffer: Vec<u8>= vec![];
         //while let Some(s) = reader.read_buf(buf).next().await {
 
-        let n = reader.read(&mut buf).await.unwrap();
-        if n > 0 {
-            // encrypt
-            let cipher_data = gfw_encrypt_all(cipher, &key, &buf[..n]);
-            // decrypt to get bock size of noise and cipher data size
-            let header_text = gfw_decrypt_header(cipher, &key, &cipher_data[..HEADER_SIZE]);
-            println!("118 {:?}", &header_text);
-            let (noise_size, cipher_size) = gfw_block_size(&header_text[..]);
-            // send header with noise data together
-            let cipher_pos = HEADER_SIZE + noise_size;
-            // orginal data length equal to cipher data lenght
-            assert_eq!(n, cipher_size - IV_SIZE);
-            // write header + noise data to write
-            println!("write incoming data header to forward server ...");
-            writer.write_all(&cipher_data[..cipher_pos]).await.unwrap();
-            // writer.flush().await.unwrap();
-            // write cipher data to writer
-            // send cipher date
-            println!("write incoming cipher data to forward server ...");
-            writer.write_all(&cipher_data[cipher_pos..]).await.unwrap();
-            //writer.flush().await.unwrap();
-        }
+        let mut buf = vec![0u8; BUFFER_MAX].into_boxed_slice();
+
+        let data_size = match reader.read(&mut buf).await {
+            Ok(0) => break,
+            Ok(n) => n,
+            Err(_) => break,
+        }; //.unwrap();
+
+        // encrypt data from incoming stream
+        let cipher_data = gfw_encrypt_all(cipher, &key, &buf[..data_size]);
+        writer.write_all(&cipher_data).await.unwrap();
     }
+    Ok(0)
 }
 
 pub async fn transfer_decrypt<'a, R, W>(reader: &'a mut R, writer: &'a mut W) -> io::Result<u64>
 where
-    R: AsyncRead + Unpin,
-    W: AsyncWrite + Unpin,
+    R: AsyncRead + Unpin + ?Sized,
+    W: AsyncWrite + Unpin + ?Sized,
 {
     let cipher = gfw_get_cipher();
     let key = gfw_get_key();
 
     // header buffer size is 32 bytes
+    let mut header_buffer = vec![0u8; HEADER_BUFFER_SIZE];
 
     loop {
-        let mut header_buffer = vec![0u8; HEADER_SIZE];
         // get header data from reader
-        // println!("read cipher header ...");
-        let header_size = reader.read_exact(&mut header_buffer).await.unwrap();
+        let header_buffer_size = match reader.read_exact(&mut header_buffer).await {
+            Ok(0) => break,
+            Ok(n) => n,
+            Err(_) => break,
+        };
+        assert_eq!(header_buffer_size, HEADER_BUFFER_SIZE);
 
-        if header_size == HEADER_SIZE {
-            //decrypt header and get block size of noise and cipher data
-            let header_text = gfw_decrypt_header(cipher, &key, &header_buffer[..header_size]);
-            println!("155 {:?}", &header_text[..]);
-            let (noise_size, cipher_size) = gfw_block_size(&header_text[..]);
+        let header_text = gfw_decrypt_header(
+            cipher,
+            &key,
+            &header_buffer[NOISE_SIZE..NOISE_SIZE + HEADER_SIZE],
+        );
 
-            // read noise buffer
-            let mut noise_buffer = vec![0u8; noise_size];
-            let _ = reader.read_exact(&mut noise_buffer).await.unwrap();
+        let (noise_size, cipher_size) = gfw_block_size(&header_text);
+        assert_eq!(noise_size, NOISE_SIZE);
 
-            // read data buffer
-            let mut data_buffer = vec![0u8; cipher_size];
-            let data_size = reader.read_exact(&mut data_buffer).await.unwrap();
+        if cipher_size > 0 {
+            // read cipher data buffer
+            let mut cipher_buffer = vec![0u8; cipher_size];
+            println!(
+                "reading cipher data... {}",
+                String::from_utf8_lossy(&header_text)
+            );
+            let cipher_data_size = reader.read_exact(&mut cipher_buffer).await.unwrap();
+            assert_eq!(cipher_data_size, cipher_size);
 
-            if data_size == cipher_size {
-                assert_eq!(data_size, cipher_size);
+            println!(
+                "\n noise size:{:>8} \ncipher size:{:>8} \n  read size:{:>8}",
+                noise_size, cipher_size, cipher_data_size
+            );
 
-                println!(
-                    "\n noise size:{:<8},\ncipher size:{:<8} \nread size: {:<8}",
-                    noise_size, cipher_size, data_size
-                );
+            let data = gfw_decrypt_data(cipher, &key, &cipher_buffer);
+            println!("ready to write_all");
+            writer.write_all(&data).await.unwrap();
+            println!("done write_all");
 
-                // let cipher_data = vec![0u8];
-                // let x =  &data_buffer[noise_size..];
-                let data = gfw_decrypt_data(cipher, &key, &data_buffer[..]);
-                ////
-                writer.write_all(&data).await.unwrap();
-                ////
-                //// writer.flush().await.unwrap();
-            }
+            // noise size:      992
+            // cipher size:     648
+            //   read size:     648
+            // decrypt data size (632) bytes, [23, 3, 3, 2, 115, 230, 238, 30] ... [102, 146, 240, 205, 141, 21, 109, 255]
+            // ready to write_all
+            // thread 'tokio-runtime-worker' panicked at 'called `Result::unwrap()` on an `Err` value: Os { code: 32, kind: BrokenPipe, message: "Broken pipe" }', /home/a14248/project/rust/gfw.press.rust/gfw_library/src/gfw_proxy.rs:173:43
+            // reading cipher data... waitting for data ...
         }
     }
+    Ok(0)
 }
 
 //
