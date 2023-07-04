@@ -8,26 +8,25 @@ pls reference to following to project:
 
 2. [proxy relay](https://github.com/icodesign/proxy-relay/tree/tokio0.2)
 
+## gfw.press.rust http proxy relay Workflow: 
 
-
-gfw.press.rust http proxy relay Workflow: 
-
-[browser:8080] <-> [gfw_client:8080] <- internet -> [gfw_server:13128]  <-> [squid:3128] <-> [destination]
+[browser:8080] <-> [gfw_client:13128] <- internet -> [gfw_server:13128]  <-> [squid:3128] <-> [destination]
 
 ```bash
 # test use curl:
 curl -v -x http://127.0.0.1:8080 https://www.google.com/
 ```
 
-gfw.press.rust socks5 proxy realy workflow:
-[broser:1080] <-> [sslocal:1080] <-> [gf_client:8080] <- internet -> [gfw_server:13128] <-> [ssserver:8838] <-> [destination]
+## gfw.press.rust socks5 proxy realy workflow:
+
+[broser:1080] <-> [sslocal:1080] <-> [gf_client:13128] <- internet -> [gfw_server:13128] <-> [ssserver:8838] <-> [destination]
 
 ```bash
 # test use curl:
 curl -v -x socks5h://localhost:1080 https://www.google.com/
 ```
 
-#GFW.Press Client Code Examle:
+# GFW.Press Client Code Examle:
 
 ```rust
 #[tokio::main]
@@ -61,4 +60,4 @@ async fn main() {
     let up_or_down = false; 
     gfw_library::gfw_proxy::gfw_press_proxy(server, forward_server, up_or_down).await;
 }
-```    
+```
