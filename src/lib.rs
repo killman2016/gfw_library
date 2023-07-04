@@ -1,7 +1,7 @@
 use openssl::sha::sha256;
 use openssl::symm::Cipher;
 
-const TESTPASSED: &str = "e%wQ02#L7srkfg9$";
+const TESTPASSED: &str = "e%aQ02#V5srkfg6$";
 const HEADER_SIZE: usize = 32;
 const NOISE_SIZE: usize = 1024 - HEADER_SIZE;
 const HEADER_BUFFER_SIZE: usize = HEADER_SIZE + NOISE_SIZE;
@@ -12,22 +12,12 @@ pub mod gfw_decrypt;
 pub mod gfw_encrypt;
 pub mod gfw_proxy;
 
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
-
 #[cfg(test)]
 mod tests {
 
     use super::*;
     use crate::gfw_decrypt::{gfw_decrypt_all, gfw_decrypt_data};
     use crate::gfw_encrypt::{gfw_encrypt_all, gfw_encrypt_data};
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
 
     #[test]
     fn cipher_works() {

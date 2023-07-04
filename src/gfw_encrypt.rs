@@ -1,5 +1,3 @@
-
-
 use openssl::{
     rand::rand_bytes,
     symm::{encrypt, Cipher},
@@ -19,11 +17,11 @@ pub fn gfw_encrypt_data(cipher: Cipher, key: &[u8], data: &[u8]) -> Vec<u8> {
 
     let ciphertext = encrypt(cipher, key, Some(&iv), data).unwrap();
 
-    // let mut cipher_buffer = BytesMut::with_capacity(IV_SIZE+ciphertext.len());
-    
+    // let mut cipher_buffer = BytesMut::with_capacity(IV_SIZE+ciphertext.len());    
     // cipher_buffer.put_slice(&iv);
     // cipher_buffer.put_slice(&ciphertext);
     // cipher_buffer
+
     [iv.to_vec(), ciphertext].concat()
 }
 
@@ -47,24 +45,24 @@ pub fn gfw_get_noise(cipher_size: usize) -> (Vec<u8>, usize) {
 pub fn gfw_encrypt_all(cipher: Cipher, key: &[u8], data: &[u8]) -> Vec<u8> {
     debug_assert_eq!(key.len(), KEY_SIZE);
 
-    let data_size = data.len();
+    // let data_size = data.len();
 
-    if data_size > 16 {
-        println!(
-            "\nplaintext <{}>: {:?} ... {:?}",
-            data_size,
-            &data[..8],
-            &data[(data_size - 8)..]
-        );
-    } else {
-        println!("\nplaintext <{}>: {:?}", &data.len(), &data[..]);
-    }
+    // if data_size > 16 {
+    //     println!(
+    //         "\nplaintext <{}>: {:?} ... {:?}",
+    //         data_size,
+    //         &data[..8],
+    //         &data[(data_size - 8)..]
+    //     );
+    // } else {
+    //     println!("\nplaintext <{}>: {:?}", &data.len(), &data[..]);
+    // }
 
     let cipher_data = gfw_encrypt_data(cipher, key, data);
     let cipher_size = cipher_data.len();
     let (noise_data, noise_size) = gfw_get_noise(cipher_size);
-
-    let header_text = format!("{:05},{:08},,", noise_size, cipher_size);
+    let check_size = (noise_size + cipher_size) % 999;
+    let header_text = format!("{:05}{:03}{:08}", noise_size, check_size, cipher_size);
     let header = header_text.as_bytes();
 
     let mut iv = vec![0u8; IV_SIZE];
@@ -72,10 +70,7 @@ pub fn gfw_encrypt_all(cipher: Cipher, key: &[u8], data: &[u8]) -> Vec<u8> {
 
     let cipher_header = gfw_encrypt_data(cipher, key, &header);
 
-    debug_assert_eq!([44], &header[5..6]);
-    debug_assert_eq!([44, 44], &header[14..16]);
-
-    println!("encrypt size: {}", cipher_size - IV_SIZE);
+    // println!("encrypt size: {}", cipher_size - IV_SIZE);
 
     [noise_data, cipher_header, cipher_data].concat()
 
