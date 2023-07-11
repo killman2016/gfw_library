@@ -26,7 +26,7 @@ curl -v -x http://127.0.0.1:13128 -L https://www.google.com/
 curl -v -x socks5h://localhost:8838 -L https://www.google.com/
 ```
 
-# GFW.Press Client Code Examle:
+# GFW.Press Client Code Example:
 
 ```rust
 #[tokio::main]
@@ -62,7 +62,7 @@ client config json for gfw_client
 	"local_or_remote":true,
 	"gfw_socks5_server":"127.0.0.1:18838",
 	"socks5_forward_server":"ip_address:18838",
-    "password":"password"
+	"password":"password"
     
 }
 ```
@@ -87,7 +87,7 @@ server config json for gfw_server
 	"local_or_remote":false,
 	"gfw_socks5_server":"ip_address:18838",
 	"socks5_forward_server":"127.0.0.1:8838",
-    "password":"password"
+	"password":"password"
 }
 ```
 
