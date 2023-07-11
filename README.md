@@ -2,7 +2,7 @@
 
 gfw press proxy server:
 
-pls reference to following to project:
+pls reference to following two project:
 
 1. [tcp-relay-rust](https://crates.io/crates/tcp-relay-rust)
 
@@ -17,7 +17,7 @@ pls reference to following to project:
 curl -v -x http://127.0.0.1:13128 -L https://www.google.com/
 ```
 
-## gfw.press.rust socks5 proxy realy workflow:
+## gfw.press.rust socks5 proxy relay workflow:
 
 [broser] <-> [sslocal:8838] <-> [gf_client:18838] <- internet -> [gfw_server:18838] <-> [ssserver:8838] <-> [destination]
 
@@ -37,6 +37,7 @@ async fn main() {
 }
 ```
 client config json for sslocal:
+
 ```json
 {
     "local_address": "127.0.0.1",
@@ -49,10 +50,11 @@ client config json for sslocal:
     "method":"aes-256-cfb",
     "fast_open": false
 }
+```
 
 client config json for gfw_client
-```json
 
+```json
 {
 	"http_mode": false,
 	"gfw_http_server":"127.0.0.1:13128",
@@ -64,8 +66,6 @@ client config json for gfw_client
     "password":"password"
     
 }
-
-
 ```
 # GFW.Press Server Code Example:
 
@@ -91,7 +91,6 @@ server config json for gfw_server
     "method":"aes_256_cfb128",
     "password":"password"
 }
-
 ```
 
 server config json for ssserver
