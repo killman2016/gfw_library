@@ -62,7 +62,6 @@ client config json for gfw_client
 	"local_or_remote":true,
 	"gfw_socks5_server":"127.0.0.1:18838",
 	"socks5_forward_server":"ip_address:18838",
-    "method":"aes_256_cfb",
     "password":"password"
     
 }
@@ -88,7 +87,6 @@ server config json for gfw_server
 	"local_or_remote":false,
 	"gfw_socks5_server":"ip_address:18838",
 	"socks5_forward_server":"127.0.0.1:8838",
-    "method":"aes_256_cfb128",
     "password":"password"
 }
 ```
