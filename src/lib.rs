@@ -1,13 +1,15 @@
 use openssl::sha::sha256;
 use openssl::symm::Cipher;
 
-const TESTPASSED: &str = "e%aQ02#V5srkfg6$";
+const TESTPASSED: &str = "e%aQ02#F9srkfg6$";
+//const TESTPASSED: &str = "h7Py1DouyY0AfGMwqtXhpD/dvSaRvkSYj8UOp5cvjgM=";
 const HEADER_SIZE: usize = 32;
 const NOISE_SIZE: usize = 1024 - HEADER_SIZE;
 const HEADER_BUFFER_SIZE: usize = HEADER_SIZE + NOISE_SIZE;
 const IV_SIZE: usize = 16;
 const KEY_SIZE: usize = 32;
 const BUFFER_MAX: usize = 1024 * 8 - IV_SIZE;
+pub mod gfw_config;
 pub mod gfw_decrypt;
 pub mod gfw_encrypt;
 pub mod gfw_proxy;
@@ -48,13 +50,6 @@ pub fn gfw_get_cipher() -> Cipher {
 // get test key
 pub fn gfw_get_key() -> [u8; 32] {
     let key = sha256(TESTPASSED.as_bytes());
-    debug_assert_eq!(key.len(), 32);
-    key
-}
-
-//get secrect key
-pub fn gfw_secrect_key(passwd: &str) -> [u8; 32] {
-    let key = sha256(passwd.as_bytes());
     debug_assert_eq!(key.len(), 32);
     key
 }

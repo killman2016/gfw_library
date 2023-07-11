@@ -13,17 +13,17 @@ pls reference to following to project:
 [browser] <-> [gfw_client:13128] <- internet -> [gfw_server:13128]  <-> [squid:3128] <-> [destination]
 
 ```bash
-# test use curl:
-curl -v -x http://127.0.0.1:13128 https://www.google.com/
+# test http proxy use curl:
+curl -v -x http://127.0.0.1:13128 -L https://www.google.com/
 ```
 
 ## gfw.press.rust socks5 proxy realy workflow:
 
-[broser] <-> [sslocal:1080] <-> [gf_client:13128] <- internet -> [gfw_server:13128] <-> [ssserver:8838] <-> [destination]
+[broser] <-> [sslocal:8838] <-> [gf_client:18838] <- internet -> [gfw_server:18838] <-> [ssserver:8838] <-> [destination]
 
 ```bash
-# test use curl:
-curl -v -x socks5h://localhost:1080 https://www.google.com/
+# test socks5 proxy use curl:
+curl -v -x socks5h://localhost:8838 -L https://www.google.com/
 ```
 
 # GFW.Press Client Code Examle:
@@ -31,33 +31,80 @@ curl -v -x socks5h://localhost:1080 https://www.google.com/
 ```rust
 #[tokio::main]
 async fn main() {
-    let server = String::from("127.0.0.1:13128");
-    let forward_server = String::from("ip_address:13128");
-
-    println!("start local server: {}", &server);
-    println!("connect to remote server: {}", &forward_server);
-
     // act as a local proxy server
-    let up = true;
-    gfw_library::gfw_proxy::gfw_press_proxy(server, forward_server, up).await;
+    let local_proxy_server = true;
+    gfw_library::gfw_proxy::gfw_press_proxy(local_proxy_server).await;
 }
 ```
+client config json for sslocal:
+```json
+{
+    "local_address": "127.0.0.1",
+    "local_port":8838,
+    "protocol":"socks",
+    "server":"127.0.0.1",
+    "server_port":18838,
+    "password":"password",
+    "timeout":7200,
+    "method":"aes-256-cfb",
+    "fast_open": false
+}
 
+client config json for gfw_client
+```json
+
+{
+	"http_mode": false,
+	"gfw_http_server":"127.0.0.1:13128",
+	"http_forward_server":"ip_address:13128",
+	"local_or_remote":true,
+	"gfw_socks5_server":"127.0.0.1:18838",
+	"socks5_forward_server":"ip_address:18838",
+    "method":"aes_256_cfb",
+    "password":"password"
+    
+}
+
+
+```
 # GFW.Press Server Code Example:
 
 ```rust
 #[tokio::main]
 async fn main() {
-    let server = String::from("ip_address:13128"); // IPv4 only 
-    // let server : &str = "[::]:13128"; // Both IPv4 & IPv6 (Linux dual stack only)
-    // let forward_server = String::from("127.0.0.1:3128"); // forward to VPS squid http proxy server
-    let forward_server = String::from("127.0.0.1:8388"); // forward to VPS shadowsocks socks5 server
-
-    println!("start remote (VPS) proxy server: {}", &server);
-    println!("connect to forward server: {}", &forward_server);
 
     // act as proxy on VPS server
-    let up_or_down = false; 
-    gfw_library::gfw_proxy::gfw_press_proxy(server, forward_server, up_or_down).await;
+    let local_proxy_server = false; 
+    gfw_library::gfw_proxy::gfw_press_proxy(local_proxy_server).await;
+}
+```
+
+server config json for gfw_server
+```json
+{
+	"http_mode": false,
+	"gfw_http_server":"ip_address:13128",
+	"http_forward_server":"127.0.0.1:3128",
+	"local_or_remote":false,
+	"gfw_socks5_server":"ip_address:18838",
+	"socks5_forward_server":"127.0.0.1:8838",
+    "method":"aes_256_cfb128",
+    "password":"password"
+}
+
+```
+
+server config json for ssserver
+```json
+{
+    "local_address": "127.0.0.1",
+    "local_port":8838,
+    "protocl":"socks",
+    "server":"127.0.0.1",
+    "server_port":8838,
+    "password":"password",
+    "timeout":7200,
+    "method":"aes-256-gcm",
+    "fast_open": false
 }
 ```

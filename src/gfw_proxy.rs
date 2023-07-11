@@ -1,18 +1,70 @@
 //use bytes::{Buf, BufMut, BytesMut};
 use std::error::Error;
-
+//use std::sync::Arc;
+use openssl::symm::Cipher;
 use tokio::net::{TcpListener, TcpStream};
 
 use futures::future;
 use tokio::io::{self, AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
+use crate::gfw_config::Config;
 use crate::gfw_decrypt::{gfw_block_size, gfw_decrypt_data, gfw_decrypt_header};
 use crate::gfw_encrypt::gfw_encrypt_all;
-use crate::{gfw_get_cipher, gfw_get_key, BUFFER_MAX, HEADER_BUFFER_SIZE, HEADER_SIZE, NOISE_SIZE};
+use crate::{BUFFER_MAX, HEADER_BUFFER_SIZE, HEADER_SIZE, NOISE_SIZE};
 
 // gfw press proxy with encrypt/decrypt ...
-pub async fn gfw_press_proxy(server: String, forward_server: String, up: bool) {
+pub async fn gfw_press_proxy(local_or_remote: bool) {
+    // default config path
+
+    //let forward_server = config.get_forward_server();
+    // local_or_remote = true  // local proxy server mode
+    // local_or_remote = false // remote (VPS) proxy server mode
+    //let local_or_remote = true; //client_config.get_proxy_type();
+
+    //tokio::spawn(async move {
+
     // proxy server listerning ...
+    let config_path = match local_or_remote {
+        true => String::from("./gfw_client_config.json"),
+        false => String::from("./gfw_server_config.json"),
+    };
+    let config_str = std::fs::read_to_string(&config_path).unwrap();
+    // Load the config structure from the string.
+    let config = serde_json::from_str::<Config>(&config_str).unwrap();
+
+    assert_eq!(local_or_remote, config.get_proxy_type());
+
+    let server = config.get_server();
+    let forward_server = config.get_forward_server();
+    //let forward_server = config.get_forward_server();
+    //let proxy_server = forward_server.clone();
+    let cipher = Cipher::aes_256_cfb128();
+    let secret_key = config.gfw_secrect_key();
+
+    match config.get_proxy_type() {
+        true => {
+            println!("local proxy server running... at {}", &server);
+        }
+        false => {
+            println!("remote (VPS) proxy server running... at {}", &server);
+        }
+    }
+
+    match config.get_http_mode() {
+        true => {
+            println!(
+                "<http> proxy server ... forward data to <squid> server: {}",
+                &forward_server
+            );
+        }
+        false => {
+            println!(
+                "<socks5> proxy server ... forward data to <shadowsocks> server: {}",
+                &forward_server
+            );
+        }
+    }
+
     let listener = TcpListener::bind(server).await.unwrap();
 
     loop {
@@ -24,15 +76,35 @@ pub async fn gfw_press_proxy(server: String, forward_server: String, up: bool) {
             }
         };
 
-        let proxy_server = forward_server.clone();
+        let mut proxy_server = String::new();
+        proxy_server.push_str(forward_server);
 
+        //let proxy_server = forward_server.clone();
         tokio::spawn(async move {
-            handle_connection(local_stream, proxy_server.as_str(), up).await;
+            //let svr_cfg_server = Arc::new(config.clone());
+            //let forward_server = config.get_forward_server();
+            //handle_connection(local_stream, proxy_server, local_or_remote).await;
+            handle_connection(
+                cipher,
+                &secret_key,
+                local_stream,
+                proxy_server.as_str(),
+                local_or_remote,
+            )
+            .await;
         });
     }
+
+    //});
 }
 
-async fn handle_connection(local_stream: TcpStream, proxy_server: &str, up: bool) {
+async fn handle_connection(
+    cipher: Cipher,
+    key: &[u8],
+    local_stream: TcpStream,
+    proxy_server: &str,
+    local_or_remote: bool,
+) {
     // println!(
     //     "listerning ... {}:{}",
     //     local_stream.local_addr().unwrap().ip(),
@@ -40,12 +112,15 @@ async fn handle_connection(local_stream: TcpStream, proxy_server: &str, up: bool
     // );
     // println!("connect to proxy server: {}", proxy_server);
 
+    //dbg!(&proxy_server);
+    //let proxy_server = svr_cfg.get_forward_server();
+    //let local_or_remote = svr_cfg.get_proxy_type();
     let remote_stream = TcpStream::connect(proxy_server).await.unwrap();
 
-    gfw_relay(local_stream, remote_stream, up).await;
+    gfw_relay(local_stream, remote_stream, local_or_remote, cipher, key).await;
 }
 
-pub async fn gfw_relay<L, R>(l: L, r: R, up: bool)
+pub async fn gfw_relay<L, R>(l: L, r: R, local_or_remote: bool, cipher: Cipher, key: &[u8])
 where
     L: AsyncRead + AsyncWrite + Unpin,
     R: AsyncRead + AsyncWrite + Unpin,
@@ -53,18 +128,18 @@ where
     let (mut lr, mut lw) = tokio::io::split(l);
     let (mut rr, mut rw) = tokio::io::split(r);
     //println!("gfw_realy begin ...1");
-    if up {
+    if local_or_remote {
         // local client
-        let client_to_server = transfer_encrypt(&mut lr, &mut rw);
-        let server_to_client = transfer_decrypt(&mut rr, &mut lw);
+        let client_to_server = transfer_encrypt(&mut lr, &mut rw, cipher, key);
+        let server_to_client = transfer_decrypt(&mut rr, &mut lw, cipher, key);
         tokio::select! {
             _ = client_to_server => {}, //{println!("close client to vps server.");} ,
             _ = server_to_client => {}, //{println!("close vps server to client.");} ,
         };
     } else {
         // vps server
-        let client_to_server = transfer_decrypt(&mut lr, &mut rw);
-        let server_to_client = transfer_encrypt(&mut rr, &mut lw);
+        let client_to_server = transfer_decrypt(&mut lr, &mut rw, cipher, key);
+        let server_to_client = transfer_encrypt(&mut rr, &mut lw, cipher, key);
         tokio::select! {
             _ = client_to_server => {}, //{ println!("close vps_server to squid_server."); } ,
             _ = server_to_client => {}, //{ println!("close squid_server to vps server."); } ,
@@ -74,13 +149,18 @@ where
     // println!("closing connection");
 }
 
-pub async fn transfer_encrypt<'a, R, W>(reader: &'a mut R, writer: &'a mut W) -> io::Result<u64>
+pub async fn transfer_encrypt<'a, R, W>(
+    reader: &'a mut R,
+    writer: &'a mut W,
+    cipher: Cipher,
+    key: &[u8],
+) -> io::Result<u64>
 where
     R: AsyncRead + Unpin,
     W: AsyncWrite + Unpin,
 {
-    let cipher = gfw_get_cipher();
-    let key = gfw_get_key();
+    // let cipher = gfw_get_cipher();
+    //let key = gfw_get_key();
 
     let mut buf = vec![0u8; BUFFER_MAX].into_boxed_slice();
 
@@ -99,13 +179,18 @@ where
     Ok(0)
 }
 
-pub async fn transfer_decrypt<'a, R, W>(reader: &'a mut R, writer: &'a mut W) -> io::Result<u64>
+pub async fn transfer_decrypt<'a, R, W>(
+    reader: &'a mut R,
+    writer: &'a mut W,
+    cipher: Cipher,
+    key: &[u8],
+) -> io::Result<u64>
 where
     R: AsyncRead + Unpin + ?Sized,
     W: AsyncWrite + Unpin + ?Sized,
 {
-    let cipher = gfw_get_cipher();
-    let key = gfw_get_key();
+    //let cipher = gfw_get_cipher();
+    //let key = gfw_get_key();
 
     // header buffer size is 32 bytes
     let mut header_buffer = vec![0u8; HEADER_BUFFER_SIZE];
