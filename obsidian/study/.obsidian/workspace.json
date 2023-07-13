@@ -13,7 +13,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "example/GitGuide.md",
+                "file": "notes/Shadowsocks-Rust-Cloak.md",
                 "mode": "source",
                 "source": false
               }
@@ -69,7 +69,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 200
+    "width": 255.5
   },
   "right": {
     "id": "510b5a9de881cd41",
@@ -85,7 +85,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "example/GitGuide.md",
+                "file": "notes/Shadowsocks-Rust-Cloak.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -102,7 +102,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "example/GitGuide.md",
+                "file": "notes/Shadowsocks-Rust-Cloak.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -125,7 +125,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "example/GitGuide.md"
+                "file": "notes/Shadowsocks-Rust-Cloak.md"
               }
             }
           }
@@ -148,14 +148,16 @@
   },
   "active": "4ba7aca126f67c5c",
   "lastOpenFiles": [
+    "notes/hobby.md",
+    "notes/Shadowsocks-Rust-Cloak.md",
+    "notes/Shadowsocks-Rust-Debian.md",
+    "notes/mystudy01.md",
+    "example/SSHviaProxy.md",
+    "example/proxy.md",
+    "example/GitGuide.md",
     "notes/selfvsSelf.md",
     "notes/mystudy02.md",
-    "notes/mystudy01.md",
-    "notes/hobby.md",
     "notes",
-    "example/proxy.md",
-    "example/SSHviaProxy.md",
-    "example/GitGuide.md",
     "example"
   ]
 }

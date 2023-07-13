@@ -1,7 +1,7 @@
 How to establish an SSH connection via a proxy
 [link](https://www.simplified.guide/ssh/connect-via-socks-proxy)
 
-1. check port information:
+1. check port information use `ss` :
 
 `ss -natp`
 

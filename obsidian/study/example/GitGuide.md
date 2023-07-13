@@ -8,9 +8,10 @@ CLI SSH agent using git:
 
 ### …or create a new repository on the command line
 
-# ssh agent
+# ssh agent ... command line ...
 eval `ssh-agent -s`
 ssh-add
+# test ...
 ssh -T git@github.com
 
 # below for git operation
