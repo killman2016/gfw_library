@@ -13,7 +13,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "notes/Shadowsocks-Rust-Cloak.md",
+                "file": "notes/Shadowsocks-Rust-Installation.md",
                 "mode": "source",
                 "source": false
               }
@@ -85,7 +85,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "notes/Shadowsocks-Rust-Cloak.md",
+                "file": "notes/Shadowsocks-Rust-Installation.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -102,7 +102,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "notes/Shadowsocks-Rust-Cloak.md",
+                "file": "notes/Shadowsocks-Rust-Installation.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -125,7 +125,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "notes/Shadowsocks-Rust-Cloak.md"
+                "file": "notes/Shadowsocks-Rust-Installation.md"
               }
             }
           }
@@ -148,8 +148,9 @@
   },
   "active": "4ba7aca126f67c5c",
   "lastOpenFiles": [
-    "notes/hobby.md",
     "notes/Shadowsocks-Rust-Cloak.md",
+    "notes/Shadowsocks-Rust-Installation.md",
+    "notes/hobby.md",
     "notes/Shadowsocks-Rust-Debian.md",
     "notes/mystudy01.md",
     "example/SSHviaProxy.md",
