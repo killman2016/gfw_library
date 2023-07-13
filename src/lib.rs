@@ -2,17 +2,31 @@ use openssl::sha::sha256;
 use openssl::symm::Cipher;
 
 const TESTPASSED: &str = "e%aQ02#F9srkfg6$";
-//const TESTPASSED: &str = "h7Py1DouyY0AfGMwqtXhpD/dvSaRvkSYj8UOp5cvjgM=";
+const HEADER_BUFFER_SIZE: usize = 1024; // NOISE_SIZE + HEADER_SIZE;
 const HEADER_SIZE: usize = 32;
-const NOISE_SIZE: usize = 1024 - HEADER_SIZE;
-const HEADER_BUFFER_SIZE: usize = HEADER_SIZE + NOISE_SIZE;
+const NOISE_SIZE: usize = HEADER_BUFFER_SIZE - HEADER_SIZE;
 const IV_SIZE: usize = 16;
 const KEY_SIZE: usize = 32;
 const BUFFER_MAX: usize = 1024 * 8 - IV_SIZE;
+
+/// Exit code when server exits unexpectedly
+pub const EXIT_CODE_SERVER_EXIT_UNEXPECTEDLY: sysexits::ExitCode = sysexits::ExitCode::Software;
+/// Exit code when server aborted
+pub const EXIT_CODE_SERVER_ABORTED: sysexits::ExitCode = sysexits::ExitCode::Software;
+/// Exit code when loading configuration from file fails
+pub const EXIT_CODE_LOAD_CONFIG_FAILURE: sysexits::ExitCode = sysexits::ExitCode::Config;
+/// Exit code when loading ACL from file fails
+pub const EXIT_CODE_LOAD_ACL_FAILURE: sysexits::ExitCode = sysexits::ExitCode::Config;
+/// Exit code when insufficient params are passed via CLI
+pub const EXIT_CODE_INSUFFICIENT_PARAMS: sysexits::ExitCode = sysexits::ExitCode::Usage;
+/// Build timestamp in UTC
+pub const BUILD_TIME: &str = build_time::build_time_utc!();
+
 pub mod gfw_config;
 pub mod gfw_decrypt;
 pub mod gfw_encrypt;
 pub mod gfw_proxy;
+pub mod service;
 
 #[cfg(test)]
 mod tests {

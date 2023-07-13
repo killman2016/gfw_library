@@ -7,23 +7,14 @@ use tokio::net::{TcpListener, TcpStream};
 use futures::future;
 use tokio::io::{self, AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 
-use crate::gfw_config::Config;
+use crate::gfw_config::GfwConfig as Config;
 use crate::gfw_decrypt::{gfw_block_size, gfw_decrypt_data, gfw_decrypt_header};
 use crate::gfw_encrypt::gfw_encrypt_all;
 use crate::{BUFFER_MAX, HEADER_BUFFER_SIZE, HEADER_SIZE, NOISE_SIZE};
 
 // gfw press proxy with encrypt/decrypt ...
 pub async fn gfw_press_proxy(local_or_remote: bool) {
-    // default config path
-
-    //let forward_server = config.get_forward_server();
-    // local_or_remote = true  // local proxy server mode
-    // local_or_remote = false // remote (VPS) proxy server mode
-    //let local_or_remote = true; //client_config.get_proxy_type();
-
-    //tokio::spawn(async move {
-
-    // proxy server listerning ...
+    
     let config_path = match local_or_remote {
         true => String::from("./gfw_client_config.json"),
         false => String::from("./gfw_server_config.json"),
@@ -36,8 +27,7 @@ pub async fn gfw_press_proxy(local_or_remote: bool) {
 
     let server = config.get_server();
     let forward_server = config.get_forward_server();
-    //let forward_server = config.get_forward_server();
-    //let proxy_server = forward_server.clone();
+
     let cipher = Cipher::aes_256_cfb128();
     let secret_key = config.gfw_secrect_key();
 
@@ -72,7 +62,8 @@ pub async fn gfw_press_proxy(local_or_remote: bool) {
             Ok(stream) => stream,
             Err(accept_error) => {
                 println!("accpeting socket failed with error {}", accept_error);
-                break;
+                // or break???
+                continue;
             }
         };
 
@@ -81,9 +72,6 @@ pub async fn gfw_press_proxy(local_or_remote: bool) {
 
         //let proxy_server = forward_server.clone();
         tokio::spawn(async move {
-            //let svr_cfg_server = Arc::new(config.clone());
-            //let forward_server = config.get_forward_server();
-            //handle_connection(local_stream, proxy_server, local_or_remote).await;
             handle_connection(
                 cipher,
                 &secret_key,
@@ -94,8 +82,6 @@ pub async fn gfw_press_proxy(local_or_remote: bool) {
             .await;
         });
     }
-
-    //});
 }
 
 async fn handle_connection(
@@ -111,10 +97,8 @@ async fn handle_connection(
     //     local_stream.local_addr().unwrap().port()
     // );
     // println!("connect to proxy server: {}", proxy_server);
+    // dbg!(&proxy_server);
 
-    //dbg!(&proxy_server);
-    //let proxy_server = svr_cfg.get_forward_server();
-    //let local_or_remote = svr_cfg.get_proxy_type();
     let remote_stream = TcpStream::connect(proxy_server).await.unwrap();
 
     gfw_relay(local_stream, remote_stream, local_or_remote, cipher, key).await;
