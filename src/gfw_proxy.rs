@@ -40,16 +40,16 @@ pub async fn gfw_press_proxy(is_local_proxy: bool) {
     }
 
     // http mode or socks5 mode
-    match config.is_http_mode() {
-        true => {
+    match config.is_socks5_mode() {
+        false => {
             println!(
-                "<http> proxy server ... forward data to <squid> server: {}",
+                "http proxy server forward ...data... to <squid> server: {}",
                 &forward_server
             );
         }
-        false => {
+        true => {
             println!(
-                "<socks5> proxy server ... forward data to <shadowsocks> server: {}",
+                "socks5 proxy server forward ...data... to <shadowsocks> server: {}",
                 &forward_server
             );
         }
@@ -86,13 +86,13 @@ async fn handle_connection(
     key: &[u8],
     local_stream: TcpStream,
     forward_addr: SocketAddr,
-    local_or_remote: bool,
+    is_local_proxy: bool,
 ) {
     let forward_stream = TcpStream::connect(forward_addr).await.unwrap();
-    gfw_relay(local_stream, forward_stream, local_or_remote, cipher, key).await;
+    gfw_relay(local_stream, forward_stream, is_local_proxy, cipher, key).await;
 }
 
-pub async fn gfw_relay<L, R>(l: L, r: R, local_or_remote: bool, cipher: Cipher, key: &[u8])
+pub async fn gfw_relay<L, R>(l: L, r: R, is_local_proxy: bool, cipher: Cipher, key: &[u8])
 where
     L: AsyncRead + AsyncWrite + Unpin,
     R: AsyncRead + AsyncWrite + Unpin,
@@ -100,7 +100,7 @@ where
     let (mut lr, mut lw) = tokio::io::split(l);
     let (mut rr, mut rw) = tokio::io::split(r);
 
-    if local_or_remote {
+    if is_local_proxy {
         // local client
         let client_to_server = transfer_encrypt(&mut lr, &mut rw, cipher, key);
         let server_to_client = transfer_decrypt(&mut rr, &mut lw, cipher, key);

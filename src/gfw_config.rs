@@ -4,7 +4,7 @@ use serde_derive::{Deserialize, Serialize};
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct GFWConfig {
     is_local_proxy: bool,
-    http_mode: bool,
+    is_socks5_mode: bool,
     http_server: String,
     http_forward_server: String,
     socks5_server: String,
@@ -15,8 +15,8 @@ pub struct GFWConfig {
 impl GFWConfig {
     // http_mode = true; // http proxy
     // http_mode = false; // socks5 proxy
-    pub fn is_http_mode(&self) -> bool {
-        self.http_mode
+    pub fn is_socks5_mode(&self) -> bool {
+        self.is_socks5_mode
     }
 
     // local_or_remote = true; // local proxy server
@@ -27,19 +27,19 @@ impl GFWConfig {
 
     // proxy server listening...
     pub fn get_server(&self) -> &str {
-        if self.http_mode {
-            self.http_server.as_str()
+        if self.is_socks5_mode {
+            self.socks5_server.as_str()            
         } else {
-            self.socks5_server.as_str()
+            self.http_server.as_str()
         }
     }
 
     // forward data to anohter server...
     pub fn get_forward_server(&self) -> &str {
-        if self.http_mode {
-            self.http_forward_server.as_str()
-        } else {
+        if self.is_socks5_mode {
             self.socks5_forward_server.as_str()
+        } else {
+            self.http_forward_server.as_str()           
         }
     }
 

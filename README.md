@@ -1,8 +1,7 @@
-# This is a rust version library for [gfw.press](https://gfw.press) 
+## This is a rust version library for [gfw.press](https://gfw.press) 
+gfw press proxy library with different encrypt/decrypt format
 
-gfw press proxy server:
-
-pls reference to following two project:
+Reference: thanks to following two projects:
 
 1. [tcp-relay-rust](https://crates.io/crates/tcp-relay-rust)
 
@@ -10,7 +9,7 @@ pls reference to following two project:
 
 ## gfw.press.rust http proxy relay Workflow: 
 
-[browser] <-> [gfw_client:13128] <- internet -> [gfw_server:13128]  <-> [squid:3128] <-> [destination]
+[browser] <-> [gfw_client:13128] <-- internet --> [gfw_server:13128]  <-> [squid:3128] <-> [destination]
 
 ```bash
 # test http proxy use curl:
@@ -19,7 +18,7 @@ curl -v -x http://127.0.0.1:13128 -L https://www.google.com/
 
 ## gfw.press.rust socks5 proxy relay workflow:
 
-[broser] <-> [sslocal:8838] <-> [gf_client:18838] <- internet -> [gfw_server:18838] <-> [ssserver:8838] <-> [destination]
+[broser] <-> [sslocal:8838] <-> [gf_client:18838] <-- internet --> [gfw_server:18838] <-> [ssserver:8838] <-> [destination]
 
 ```bash
 # test socks5 proxy use curl:
@@ -57,7 +56,7 @@ client config json for gfw_client
 ```json
 {
 	"is_local_proxy":true,
-    "http_mode": false,
+    "is_socks5_mode": true,
 	"http_server":"127.0.0.1:13128",
 	"http_forward_server":"ip_address:13128",
 	"socks5_server":"127.0.0.1:18838",
@@ -81,7 +80,7 @@ server config json for gfw_server
 ```json
 {
 	"is_local_proxy":false,
-    "http_mode": false,
+    "is_socks5_mode": true,
 	"http_server":"ip_address:13128",
 	"http_forward_server":"127.0.0.1:3128",
 	"socks5_server":"ip_address:18838",
