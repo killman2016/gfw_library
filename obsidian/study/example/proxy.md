@@ -1,3 +1,16 @@
+# test proxy
+
+```bash
+# http proxy testing
+curl -v -x http://127.0.0.1:1080 -L https://www.google.com/
+
+# socks5 proxy testing
+curl -v -x socks5h://localhost:8838 -L http://www.google.com/
+
+#check listening port
+netstat -tunlp
+```
+
 # set http or socks proxy environment variables
 
 ```bash

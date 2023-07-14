@@ -13,6 +13,8 @@ eval `ssh-agent -s`
 ssh-add
 # test ...
 ssh -T git@github.com
+# test git clone ...
+git clone https://github.com/sfackler/rust-socks.git
 
 # below for git operation
 echo "# gfw_library" >> README.md

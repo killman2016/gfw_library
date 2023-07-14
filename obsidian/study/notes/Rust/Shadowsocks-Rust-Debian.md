@@ -21,13 +21,19 @@ by 神秘人 at 2022-11-30
 1.2 得用下面程序随机程序高强度密码，长度为32，加密方式为：2022-blake3-chacha20-poly1305
 
 ```
+# using openssl
 openssl rand -base64 32
+# or using ssservice
+ssservice genkey -m 2022-blake3-chacha20-poly1305
 ```
 
 利用上面随机产生数字，作为密码
 
 ```
-Qi0n04pcO38SFROxnIspyE0WRwwMjVEf（随机产生， 不一定是这个数字）
+# （随机产生， 不一定是这个数字）
+Qi0n04pcO38SFROxnIspyE0WRwwMjVEf
+# or using ssservice
+3gCHhhHx20WmMpCTQVdtGOjTuIQ4Um+qKfJPGnXcSXg=
 ```
 
 安装tar -xf解压工具
