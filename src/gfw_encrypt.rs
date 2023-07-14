@@ -3,14 +3,15 @@ use openssl::{
     symm::{encrypt, Cipher},
 };
 
-use crate::{IV_SIZE, KEY_SIZE, NOISE_SIZE};
+use crate::{DATA_BUFFER_MAX, IV_SIZE, KEY_SIZE, NOISE_SIZE};
 
 // gfw encrypt data add addional IV before cipher data
 // data format: [IV] + [cipher data]
 //   [IV] size 16 bytes for aes_256_cfb128
 //   [cipher] is variable
 pub fn gfw_encrypt_data(cipher: Cipher, key: &[u8], data: &[u8]) -> Vec<u8> {
-    debug_assert_eq!(key.len(), KEY_SIZE);
+    assert!(key.len() == KEY_SIZE);
+    assert!(data.len() <= DATA_BUFFER_MAX);
 
     let mut iv = vec![0u8; IV_SIZE];
     rand_bytes(&mut iv).unwrap();
@@ -42,20 +43,6 @@ pub fn gfw_get_noise(cipher_size: usize) -> (Vec<u8>, usize) {
 
 pub fn gfw_encrypt_all(cipher: Cipher, key: &[u8], data: &[u8]) -> Vec<u8> {
     debug_assert_eq!(key.len(), KEY_SIZE);
-
-    // let data_size = data.len();
-
-    // if data_size > 16 {
-    //     println!(
-    //         "\nplaintext <{}>: {:?} ... {:?}",
-    //         data_size,
-    //         &data[..8],
-    //         &data[(data_size - 8)..]
-    //     );
-    // } else {
-    //     println!("\nplaintext <{}>: {:?}", &data.len(), &data[..]);
-    // }
-
     let cipher_data = gfw_encrypt_data(cipher, key, data);
     let cipher_size = cipher_data.len();
     let (noise_data, noise_size) = gfw_get_noise(cipher_size);
@@ -67,8 +54,5 @@ pub fn gfw_encrypt_all(cipher: Cipher, key: &[u8], data: &[u8]) -> Vec<u8> {
     rand_bytes(&mut iv).unwrap();
 
     let cipher_header = gfw_encrypt_data(cipher, key, &header);
-
-    // println!("encrypt size: {}", cipher_size - IV_SIZE);
-
     [noise_data, cipher_header, cipher_data].concat()
 }

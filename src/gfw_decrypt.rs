@@ -14,29 +14,8 @@ pub fn gfw_decrypt_data(cipher: Cipher, key: &[u8], data: &[u8]) -> Vec<u8> {
     let iv = &data[..16];
     let plaintext = decrypt(cipher, key, Some(&iv), &data[16..]).unwrap();
 
-    // let data_size = plaintext.len();
-    // if data_size > 16 {
-    //     println!(
-    //         "decrypt data size ({}) bytes, {:?} ... {:?}",
-    //         data_size,
-    //         &plaintext[..8],
-    //         &plaintext[(data_size - 8)..]
-    //     );
-    // } else {
-    //     println!("\nplaintext <{}>: {:?}", &plaintext.len(), &plaintext[..]);
-    // }
     plaintext
 }
-
-// pub fn gfw_decrypt_bytes(cipher: Cipher, key: &[u8], data: &[u8]) -> BytesMut {
-//     debug_assert!(data.len() > 16);
-//     debug_assert_eq!(key.len(), 32);
-
-//     let iv = &data[..16];
-//     let plaintext = decrypt(cipher, key, Some(&iv), &data[16..]).unwrap();
-//     let plaint_bytes = BytesMut::from(&plaintext[..]);
-//     plaint_bytes
-// }
 
 // gfw header format: [xxxxx,xxxxxxxx,,]
 // header size 16 bytes

@@ -56,14 +56,13 @@ client config json for gfw_client
 
 ```json
 {
-	"http_mode": false,
-	"gfw_http_server":"127.0.0.1:13128",
+	"is_local_proxy":true,
+    "http_mode": false,
+	"http_server":"127.0.0.1:13128",
 	"http_forward_server":"ip_address:13128",
-	"local_or_remote":true,
-	"gfw_socks5_server":"127.0.0.1:18838",
+	"socks5_server":"127.0.0.1:18838",
 	"socks5_forward_server":"ip_address:18838",
 	"password":"password"
-    
 }
 ```
 # GFW.Press Server Code Example:
@@ -81,11 +80,11 @@ async fn main() {
 server config json for gfw_server
 ```json
 {
-	"http_mode": false,
-	"gfw_http_server":"ip_address:13128",
+	"is_local_proxy":false,
+    "http_mode": false,
+	"http_server":"ip_address:13128",
 	"http_forward_server":"127.0.0.1:3128",
-	"local_or_remote":false,
-	"gfw_socks5_server":"ip_address:18838",
+	"socks5_server":"ip_address:18838",
 	"socks5_forward_server":"127.0.0.1:8838",
 	"password":"password"
 }
