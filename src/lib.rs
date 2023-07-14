@@ -13,6 +13,7 @@ pub mod gfw_config;
 pub mod gfw_decrypt;
 pub mod gfw_encrypt;
 pub mod gfw_proxy;
+pub mod gfw_proxy_ss;
 
 #[cfg(test)]
 mod tests {

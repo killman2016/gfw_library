@@ -8,8 +8,11 @@ Reference: thanks to following two projects:
 2. [proxy relay](https://github.com/icodesign/proxy-relay/tree/tokio0.2)
 
 ## gfw.press.rust http proxy relay Workflow: 
+(only http encrypt/decrypt proxy, no shadowsocks-rust involvement)
 
-[browser] <-> [gfw_client:13128] <-- internet --> [gfw_server:13128]  <-> [squid:3128] <-> [destination]
+[browser] <-> [gfw_http_client:13128] 
+<-- internet --> 
+[gfw_http_server:13128]  <-> [squid:3128] <-> [destination]
 
 ```bash
 # test http proxy use curl:
@@ -18,7 +21,9 @@ curl -v -x http://127.0.0.1:13128 -L https://www.google.com/
 
 ## gfw.press.rust socks5 proxy relay workflow:
 
-[broser] <-> [sslocal:8838] <-> [gf_client:18838] <-- internet --> [gfw_server:18838] <-> [ssserver:8838] <-> [destination]
+[broser] <-> [sslocal:8838] <-> [gf_socks_client:18838] 
+<-- internet --> 
+[gfw_socks_server:18838] <-> [ssserver:8838] <-> [destination]
 
 ```bash
 # test socks5 proxy use curl:
