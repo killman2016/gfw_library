@@ -11,8 +11,12 @@
             "id": "094864674450ec4d",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {}
+              "type": "markdown",
+              "state": {
+                "file": "notes/Linux/Rime with IBus.md",
+                "mode": "source",
+                "source": false
+              }
             }
           }
         ]
@@ -81,6 +85,7 @@
             "state": {
               "type": "backlink",
               "state": {
+                "file": "notes/Linux/Rime with IBus.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -97,6 +102,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
+                "file": "notes/Linux/Rime with IBus.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -118,7 +124,9 @@
             "type": "leaf",
             "state": {
               "type": "outline",
-              "state": {}
+              "state": {
+                "file": "notes/Linux/Rime with IBus.md"
+              }
             }
           }
         ]
@@ -140,22 +148,25 @@
   },
   "active": "094864674450ec4d",
   "lastOpenFiles": [
-    "example/GitGuide.md",
-    "notes/Linux/vi-color-highlight.md",
-    "notes/Rust/mystudy01.md",
+    "notes/Linux/find file recursively.md",
+    "notes/Linux/Rime with IBus.md",
+    "example/Git Guide Manual.md",
+    "example/proxy setting.md",
+    "example/SSH via Proxy.md",
+    "notes/Linux/vi color highlight.md",
+    "example/Squid Configuration.md",
+    "notes/Rust/mystudy02.md",
     "notes/Rust/selfvsSelf.md",
+    "notes/Rust/mystudy01.md",
     "notes/Rust/Shadowsocks-Rust-Cloak.md",
     "notes/Rust",
     "notes/Linux",
     "notes/Rust/SS-advanced-configurations.md",
     "notes/Rust/Shadowsocks-Rust-Modify.md",
     "notes/Rust/Shadowsocks-Rust-Debian.md",
-    "example/proxy.md",
-    "example/SSHviaProxy.md",
     "处理socks5 connect请求.md",
     "notes/Rust/Shadowsocks-Rust-Installation.md",
     "notes/hobby.md",
-    "notes/Rust/mystudy02.md",
     "notes",
     "example"
   ]

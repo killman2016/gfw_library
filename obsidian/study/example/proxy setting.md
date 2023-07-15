@@ -1,4 +1,4 @@
-# test proxy
+# proxy config and test
 
 ```bash
 # http proxy testing
@@ -9,7 +9,18 @@ curl -v -x socks5h://localhost:8838 -L http://www.google.com/
 
 #check listening port
 netstat -tunlp
+
+# #### System Wide proxy configuration on Debian
+PROXY_URL="192.168.58.26:3128"
+HTTP_PROXY=$PROXY_URL
+HTTPS_PROXY=$PROXY_URL
+FTP_PROXY=$PROXY_URL
+http_proxy=$PROXY_URL
+https_proxy=$PROXY_URL
+ftp_proxy=$PROXY_URL
+export HTTP_PROXY HTTPS_PROXY FTP_PROXY http_proxy https_proxy ftp_proxy
 ```
+
 
 # set http or socks proxy environment variables
 

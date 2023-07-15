@@ -40,6 +40,7 @@ async fn main() {
     gfw_library::gfw_proxy::gfw_press_proxy(local_proxy_server).await;
 }
 ```
+
 client config json for sslocal:
 
 ```json

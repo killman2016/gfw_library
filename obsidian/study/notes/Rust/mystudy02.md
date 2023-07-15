@@ -2,7 +2,7 @@ This is a tracking file for study rust ...
 
 [proxy relay function from](https://github.com/icodesign/proxy-relay/)
 
-# Examples: using tokio::io;;copy_buf
+# Examples: using tokio::io::copy_buf
 
 ```rust
 use tokio::io;
