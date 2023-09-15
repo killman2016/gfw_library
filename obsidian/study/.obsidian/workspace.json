@@ -4,16 +4,16 @@
     "type": "split",
     "children": [
       {
-        "id": "ffc80e85748e05f3",
+        "id": "765c320a250bf4ec",
         "type": "tabs",
         "children": [
           {
-            "id": "094864674450ec4d",
+            "id": "4293ce046dc5f67e",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "notes/Linux/Rime with IBus.md",
+                "file": "example/Git Guide Manual.md",
                 "mode": "source",
                 "source": false
               }
@@ -85,7 +85,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "notes/Linux/Rime with IBus.md",
+                "file": "example/Git Guide Manual.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -102,7 +102,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "notes/Linux/Rime with IBus.md",
+                "file": "example/Git Guide Manual.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -125,7 +125,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "notes/Linux/Rime with IBus.md"
+                "file": "example/Git Guide Manual.md"
               }
             }
           }
@@ -146,27 +146,39 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "094864674450ec4d",
+  "active": "4293ce046dc5f67e",
   "lastOpenFiles": [
-    "notes/Linux/find file recursively.md",
-    "notes/Linux/Rime with IBus.md",
-    "example/Git Guide Manual.md",
-    "example/proxy setting.md",
-    "example/SSH via Proxy.md",
-    "notes/Linux/vi color highlight.md",
-    "example/Squid Configuration.md",
-    "notes/Rust/mystudy02.md",
-    "notes/Rust/selfvsSelf.md",
-    "notes/Rust/mystudy01.md",
-    "notes/Rust/Shadowsocks-Rust-Cloak.md",
+    "tips/20230720.md",
+    "tips/20230620.md",
+    "rust/selfvsSelf.md",
+    "rust/mystudy02.md",
+    "rust/mystudy01.md",
+    "rust/Shadowsocks-Rust-Modify.md",
+    "rust/Shadowsocks-Rust-Installation.md",
+    "rust/Shadowsocks-Rust-Debian.md",
+    "rust/Shadowsocks-Rust-Cloak.md",
+    "rust/SS-advanced-configurations.md",
+    "rust",
+    "linux/warp client.md",
+    "linux/vi color highlight.md",
+    "linux/ufw.md",
+    "linux/find file recursively.md",
+    "linux/Rime with IBus.md",
+    "linux",
+    "tips/20230802.md",
+    "tips/20230916.md",
+    "tips/20230915.md",
+    "tips/20230908.md",
+    "tips/20230804.md",
+    "tips",
+    "20230916.md",
+    "20230915.md",
+    "20230908.md",
+    "20230804.md",
+    "notes/20230720.md",
+    "notes/20230620.md",
     "notes/Rust",
     "notes/Linux",
-    "notes/Rust/SS-advanced-configurations.md",
-    "notes/Rust/Shadowsocks-Rust-Modify.md",
-    "notes/Rust/Shadowsocks-Rust-Debian.md",
-    "处理socks5 connect请求.md",
-    "notes/Rust/Shadowsocks-Rust-Installation.md",
-    "notes/hobby.md",
     "notes",
     "example"
   ]

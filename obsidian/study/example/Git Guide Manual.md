@@ -41,4 +41,12 @@ git push -u origin main
 ```
 ### …or import code from another repository
 
-You can initialize this repository with code from a Subversion, Mercurial, or TFS project.
+```
+# after you clone a project
+# git clone https://github.com/project/example.git
+# you can refresh it with below command 
+git pull
+git fetch
+```
+
+
